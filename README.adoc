@@ -15,4 +15,50 @@ What it holds:
 * `Wrap`, `Shorten`, `PadRight`, `Truncate`, `Width`: text helpers that count columns per rune.
 * `RoundedTheme`: rounded single borders on the terminal's own background.
 
-`make lint test` before a commit.
+== Install
+
+[source,sh]
+----
+go get github.com/mnohe/tuingo@latest
+----
+
+Releases are tagged `vX.Y.Z` and listed under https://github.com/mnohe/tuingo/releases[Releases]. Pin a version with `@v0.1.0`.
+
+== Use
+
+[source,go]
+----
+import (
+	"github.com/rivo/tview"
+
+	"github.com/mnohe/tuingo"
+)
+
+func main() {
+	tuingo.RoundedTheme()
+
+	title, body := tuingo.CardStyles("#3b82f6", "#ffffff", "#e5e7eb", false)
+
+	pane := tuingo.NewCardPane("board")
+	pane.DrawCard("a", 0, 0, 24, tuingo.Card{
+		Label: "A", Glyph: "●", Text: "first card",
+		Title: title, Body: body,
+	}, "")
+	pane.Select("a")
+
+	footer := tuingo.NewFooter()
+	footer.Set("←↑↓→", "move", "q", "quit")
+
+	root := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(pane, 0, 1, true).
+		AddItem(footer, 1, 0, false)
+
+	if err := tview.NewApplication().SetRoot(root, true).Run(); err != nil {
+		panic(err)
+	}
+}
+----
+
+`DrawTree` lays out a tree of `Node` values as cards joined by arrows, and `Watch` calls back once per burst of file changes so a board can rebuild itself. The doc comment on each type says what it takes.
+
+See link:CONTRIBUTING.adoc[CONTRIBUTING] for development and releases.

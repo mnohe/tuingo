@@ -1,0 +1,35 @@
+= Contributing
+
+== Before a commit
+
+[source,sh]
+----
+make lint test
+----
+
+`make lint` fails on any file `gofmt` would change and runs `go vet`. CI runs the same checks, plus `go build ./...`, on every push to `main` and on every pull request.
+
+== Releasing
+
+tuingo is a Go library, so a release is a version tag. Consumers get it with `go get github.com/mnohe/tuingo@vX.Y.Z`.
+
+. Make sure `main` is green in the Actions tab and contains what you want to ship.
+. Pick the next https://semver.org[semantic version]. Before `v1.0.0`, breaking changes bump the minor version.
+. Tag the commit and push the tag:
++
+[source,sh]
+----
+git checkout main && git pull
+git tag v0.1.0
+git push origin v0.1.0
+----
+
+Pushing the tag starts the `release` workflow (`.github/workflows/release.yml`), which:
+
+. runs `make lint` and `make test` on the tagged commit,
+. creates a GitHub Release named after the tag with generated notes and the source archives,
+. asks `proxy.golang.org` for the version so `go get` sees it straight away.
+
+To release again from an existing tag, use *Actions → release → Run workflow* and select the tag.
+
+A bad release is not edited in place: the Go module proxy caches versions permanently. Tag a new patch version, and if needed add a `retract` directive to `go.mod` for the bad one.
