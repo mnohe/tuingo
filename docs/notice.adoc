@@ -1,0 +1,15 @@
+= Notice
+
+A status message should go away without the reader dismissing it, and a newer one must not vanish early because an older one expired. `Notice` is a one-line message that clears itself after a while unless replaced.
+
+image::notice.svg[A one-line message: Release notes moved to review]
+
+== How a message clears
+
+`Show` replaces the message and starts its timer. When a message expires, the notice clears the line only if no newer message has replaced it, so each message stays for the full `ttl`. The clearing runs through `redraw`, which has to run the change on the UI loop and redraw; tview's `QueueUpdateDraw` does both.
+
+[source,go]
+----
+notice := tuingo.NewNotice(3*time.Second, func(f func()) { app.QueueUpdateDraw(f) })
+notice.Show("Release notes moved to review")
+----

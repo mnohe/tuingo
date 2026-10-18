@@ -1,0 +1,15 @@
+= Footer
+
+A screen's available keys belong in one place, in a form the eye separates quickly from the content. `Footer` is a one-line key legend: each key in bold, its label faint, pairs two spaces apart.
+
+image::footer.svg[A legend row: arrows move, enter open, / search, q quit]
+
+== How the legend is set
+
+`Set` takes key and label pairs in order and replaces the row. `Legend` returns the same text with its color tags, for a legend inside other text: `TextBox` builds its legend row with it, and `KeyPanel` lays the same format out as a column.
+
+[source,go]
+----
+footer := tuingo.NewFooter()
+footer.Set("←↑↓→", "move", "enter", "open", "q", "quit")
+----
