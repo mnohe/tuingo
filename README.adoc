@@ -7,10 +7,11 @@ Terminal primitives on https://github.com/rivo/tview[tview] and https://github.c
 What it holds:
 
 * `CardPane`: a bordered, titled viewport over a plane of cells larger than itself, with rectangles placed on the plane that a cursor moves between. Left follows a rectangle's parent link, right its first child, up and down the nearest rectangle in that direction. `DrawCard`, `DrawTree` and `DrawLane` draw a `Card` (a label, a glyph and two lines of text), a tree of cards joined by arrows, and a column of cards; `CardStyles` and `Darker` give a card its colors.
-* `TextBox`: a bordered, titled, scrolling box of text with a key legend along its bottom edge, reporting the legend keys. `Confirm`: a yes-or-no modal that also answers `y`, `n` and `esc`.
+* `TextBox`: a bordered, titled, scrolling box of text that reports the keys it offers. A key whose `Kind` is `KeyStays` (the default) sits in the legend along its bottom edge; a `KeyCloses` key sits as a chip on the bottom border, in the border's color. Chips that do not fit fold from the right into a `+ More…` chip, the first key the last to fold, and `+` opens a `KeyPanel` listing them; a folded key still runs when pressed. `Confirm`: a yes-or-no modal that also answers `y`, `n` and `esc`.
 * `Watch`: a recursive fsnotify watcher that skips `.git`, adds created folders, and calls back once per burst of changes.
 * `Notice`: a one-line message that clears itself after a while unless replaced.
 * `Tabs` and `Footer`: a row of labels with one active and a right-aligned stamp; a key legend.
+* `KeyPanel`: a bordered column of keys, one per line in the legend's style, that shows keys and handles none. `Legend` is the format, `Footer` lays it out as a row and `KeyPanel` as a column.
 * `Center`: draws a primitive centered on the screen at a size computed from the screen's.
 * `Wrap`, `Shorten`, `PadRight`, `Truncate`, `Width`: text helpers that count columns per rune.
 * `RoundedTheme`: rounded single borders on the terminal's own background.
