@@ -85,8 +85,8 @@ func TestChipBackgroundFollowsTheBorderColor(t *testing.T) {
 	x := strings.IndexRune(edge(row(s, 11)), 'y')
 	x = len([]rune(row(s, 11)[:x]))
 	_, _, style, _ := s.GetContent(x, 11)
-	if fg, bg, _ := style.Decompose(); bg != tcell.ColorRed || fg != chipInk {
-		t.Errorf("chip colors: fg %v bg %v", fg, bg)
+	if fg, bg, attr := style.Decompose(); fg != tcell.ColorRed || bg != tcell.ColorDefault || attr&tcell.AttrReverse == 0 {
+		t.Errorf("chip style: fg %v bg %v attr %v", fg, bg, attr)
 	}
 }
 

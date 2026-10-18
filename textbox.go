@@ -28,9 +28,6 @@ type Key struct {
 // more is the chip that stands in for the closing keys folded off the border.
 const more = "+ More…"
 
-// chipInk is the ink of a border chip, dark so it reads on the border color.
-var chipInk = tcell.GetColor("#000000")
-
 // TextBox is a bordered, titled, scrolling box of dynamic-color text with a key legend
 // along its bottom edge, and the keys that close it as chips on its bottom border. Chips
 // that do not fit fold into a "+ More…" chip, and + opens a KeyPanel listing them.
@@ -147,7 +144,9 @@ func (v *TextBox) drawChips(screen tcell.Screen) {
 		labels = append(labels, more)
 	}
 	right := bx + bw - 2
-	style := tcell.StyleDefault.Foreground(chipInk).Background(v.GetBorderColor())
+	// Reversed, the chip fills with the border color and its ink is the screen's background,
+	// whatever the terminal's theme.
+	style := tcell.StyleDefault.Foreground(v.GetBorderColor()).Reverse(true)
 	if row := rowWidth(labels); row <= bw-4 {
 		cx := right - row + 1
 		for _, l := range labels {
