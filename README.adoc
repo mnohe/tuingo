@@ -12,6 +12,7 @@ What it holds:
 * `Notice`: a one-line message that clears itself after a while unless replaced.
 * `Tabs` and `Footer`: a row of labels with one active and a right-aligned stamp; a key legend.
 * `KeyPanel`: a bordered column of keys, one per line in the legend's style, that shows keys and handles none. `Legend` is the format, `Footer` lays it out as a row and `KeyPanel` as a column.
+* `Divider`: a one-column vertical double line, for the fixed edge between a pinned pane and the panes that scroll past it.
 * `Center`: draws a primitive centered on the screen at a size computed from the screen's.
 * `Wrap`, `Shorten`, `PadRight`, `Truncate`, `Width`: text helpers that count columns per rune.
 * `RoundedTheme`: rounded single borders on the terminal's own background.
