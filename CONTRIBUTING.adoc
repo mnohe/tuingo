@@ -9,6 +9,17 @@ make lint test
 
 `make lint` fails on any file `gofmt` would change and runs `go vet`. CI runs the same checks, plus `go build ./...`, on every push to `main` and on every pull request.
 
+== Pictures in the docs
+
+Each page under `docs/` shows its primitive in an SVG that `internal/docgen` draws on a tcell simulation screen, with the same `Draw` methods a terminal runs. A change to how a primitive draws therefore needs the pictures redrawn:
+
+[source,sh]
+----
+make docs
+----
+
+The generator sits under `internal/`, so no other module can import it, though its source is published with the rest of the repository.
+
 == Releasing
 
 tuingo is a Go library, so a release is a version tag. Consumers get it with `go get github.com/mnohe/tuingo@vX.Y.Z`.

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="108" viewBox="0 0 360 108">
+<rect width="100%" height="100%" fill="#1e1e1e"/>
+<g font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-size="15" xml:space="preserve">
+<g fill="#808080"><text x="126" y="13">║</text></g>
+<g fill="#ffffff"><text x="9" y="31">p</text><text x="18" y="31">i</text><text x="27" y="31">n</text><text x="36" y="31">n</text><text x="45" y="31">e</text><text x="54" y="31">d</text></g>
+<g fill="#808080"><text x="126" y="31">║</text></g>
+<g fill="#ffffff"><text x="144" y="31">p</text><text x="153" y="31">a</text><text x="162" y="31">n</text><text x="171" y="31">e</text><text x="180" y="31">s</text><text x="198" y="31">t</text><text x="207" y="31">h</text><text x="216" y="31">a</text><text x="225" y="31">t</text></g>
+<g fill="#ffffff"><text x="9" y="49">p</text><text x="18" y="49">a</text><text x="27" y="49">n</text><text x="36" y="49">e</text></g>
+<g fill="#808080"><text x="126" y="49">║</text></g>
+<g fill="#ffffff"><text x="144" y="49">s</text><text x="153" y="49">c</text><text x="162" y="49">r</text><text x="171" y="49">o</text><text x="180" y="49">l</text><text x="189" y="49">l</text><text x="207" y="49">p</text><text x="216" y="49">a</text><text x="225" y="49">s</text><text x="234" y="49">t</text></g>
+<g fill="#808080"><text x="126" y="67">║</text></g>
+<g fill="#808080"><text x="126" y="85">║</text></g>
+<g fill="#808080"><text x="126" y="103">║</text></g>
+</g>
+</svg>
