@@ -25,12 +25,23 @@ type Key struct {
 	Kind  KeyKind
 }
 
-// more is the chip that stands in for the closing keys folded off the border.
-const more = "+ More…"
+// chip is a key and its label as a chip on the border shows them, the key in bold.
+type chip struct{ key, label string }
 
-// TextBox is a bordered, titled, scrolling box of dynamic-color text with a key legend
-// along its bottom edge, and the keys that close it as chips on its bottom border. Chips
-// that do not fit fold into a "+ More…" chip, and + opens a KeyPanel listing them.
+// text is the chip's label as drawn, without its padding.
+func (c chip) text() string { return c.key + " " + c.label }
+
+// moreChip stands in for the closing keys folded off the border, and escChip closes the
+// box. Esc is drawn last and never folds.
+var (
+	moreChip = chip{"+", "More…"}
+	escChip  = chip{"esc", "close"}
+)
+
+// TextBox is a bordered, titled, scrolling box of dynamic-color text with a right-aligned
+// key legend along its bottom edge, and the keys that close it as chips on its bottom
+// border, esc last. Chips that do not fit fold into a "+ More…" chip, and + opens a
+// KeyPanel listing them; esc never folds.
 // Scrolling keys are the text view's; esc and q close it; any other key it offers is
 // reported, folded or not.
 type TextBox struct {
@@ -53,7 +64,7 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 	v := &TextBox{
 		Box:   tview.NewBox(),
 		text:  tview.NewTextView().SetDynamicColors(true).SetScrollable(true),
-		hints: tview.NewTextView().SetDynamicColors(true),
+		hints: tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignRight),
 		panel: NewKeyPanel(),
 		onKey: onKey,
 		close: close,
@@ -79,8 +90,8 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 }
 
 // Show fills the box: the title in its border, the lines, the keys that leave it open in
-// the legend with a faint note after them when given, and the keys that close it on the
-// bottom border, the first the last to fold.
+// the right-aligned legend with a faint note left of them when given, and the keys that
+// close it on the bottom border followed by esc, the first the last to fold.
 func (v *TextBox) Show(title string, lines []string, keys []Key, note string) {
 	v.blocks = nil
 	v.SetTitle(" " + title + " ")
@@ -98,12 +109,12 @@ func (v *TextBox) Show(title string, lines []string, keys []Key, note string) {
 	}
 	hints := Legend(pairs...)
 	if note != "" {
-		hints += "  [::d]" + tview.Escape(note) + "[::-]"
+		if hints != "" {
+			hints = "  " + hints
+		}
+		hints = "[::d]" + tview.Escape(note) + "[::-]" + hints
 	}
-	if hints != "" {
-		hints += "  "
-	}
-	v.hints.SetText("\n" + hints + Legend("esc", "close"))
+	v.hints.SetText("\n" + hints)
 }
 
 // Size is the box's size on a screen: nine tenths of the width up to 120 columns, and 85
@@ -142,31 +153,40 @@ func (v *TextBox) Draw(screen tcell.Screen) {
 }
 
 // drawChips draws the closing keys right-aligned on the bottom border, each followed by a
-// ─, folding from the right into a "+ More…" chip until the row fits, and the key panel
-// listing the folded keys, its bottom on the row above the border and its right edge on
-// the chip's.
+// ─ and esc last, folding from the right into a "+ More…" chip until the row fits, and the
+// key panel listing the folded keys, its bottom on the row above the border and its right
+// edge on the chip's. Esc's width is reserved before the other chips are fitted.
 func (v *TextBox) drawChips(screen tcell.Screen) {
-	if len(v.closing) == 0 {
-		return
-	}
 	bx, by, bw, bh := v.GetRect()
-	shown, folded := fold(v.closing, bw-4)
+	avail := bw - 4
+	shown, folded := fold(v.closing, avail-rowWidth([]chip{escChip}))
 	v.folded = v.closing[len(shown):]
-	labels := make([]string, 0, len(shown)+1)
+	chips := make([]chip, 0, len(shown)+2)
 	for _, k := range shown {
-		labels = append(labels, string(k.Rune)+" "+k.Label)
+		chips = append(chips, chip{string(k.Rune), k.Label})
 	}
 	if folded {
-		labels = append(labels, more)
+		chips = append(chips, moreChip)
 	}
+	chips = append(chips, escChip)
 	right := bx + bw - 2
 	// Reversed, the chip fills with the border color and its ink is the screen's background,
 	// whatever the terminal's theme.
 	style := tcell.StyleDefault.Foreground(v.GetBorderColor()).Reverse(true)
-	if row := rowWidth(labels); row <= bw-4 {
+	if rowWidth(chips) > avail && folded {
+		// Esc alone, so every box shows at least one chip; + still opens the panel.
+		chips = chips[len(chips)-1:]
+	}
+	// The panel's right edge sits on the "+ More…" chip's, or on the border's when it is
+	// not drawn.
+	edge := right - 1
+	if row := rowWidth(chips); row <= avail {
 		cx := right - row + 1
-		for _, l := range labels {
-			cx = drawChip(screen, cx, by+bh-1, l, style) + 1
+		for _, c := range chips {
+			cx = drawChip(screen, cx, by+bh-1, c, style) + 1
+			if c == moreChip {
+				edge = cx - 2
+			}
 		}
 	}
 	if !folded || !v.open {
@@ -178,7 +198,7 @@ func (v *TextBox) drawChips(screen tcell.Screen) {
 	}
 	v.panel.Set(pairs...)
 	pw, ph := v.panel.Size()
-	px, py := max(right-1-pw+1, bx+1), max(by+bh-1-ph, by+1)
+	px, py := max(edge-pw+1, bx+1), max(by+bh-1-ph, by+1)
 	v.panel.SetRect(px, py, min(pw, bx+bw-1-px), min(ph, by+bh-1-py))
 	v.panel.Draw(screen)
 }
@@ -186,15 +206,15 @@ func (v *TextBox) drawChips(screen tcell.Screen) {
 // fold returns the leading closing keys that fit in avail columns, and whether any were
 // folded behind a "+ More…" chip, whose width it counts. When none fit, none are shown.
 func fold(keys []Key, avail int) ([]Key, bool) {
-	labels := make([]string, len(keys))
+	chips := make([]chip, len(keys))
 	for i, k := range keys {
-		labels[i] = string(k.Rune) + " " + k.Label
+		chips[i] = chip{string(k.Rune), k.Label}
 	}
-	if rowWidth(labels) <= avail {
+	if rowWidth(chips) <= avail {
 		return keys, false
 	}
 	for n := len(keys) - 1; n > 0; n-- {
-		if rowWidth(append(labels[:n:n], more)) <= avail {
+		if rowWidth(append(chips[:n:n], moreChip)) <= avail {
 			return keys[:n], true
 		}
 	}
@@ -203,22 +223,23 @@ func fold(keys []Key, avail int) ([]Key, bool) {
 
 // rowWidth is the columns a row of chips takes: each label with a space either side and a
 // ─ after it.
-func rowWidth(labels []string) int {
+func rowWidth(chips []chip) int {
 	w := 0
-	for _, l := range labels {
-		w += Width(l) + 3
+	for _, c := range chips {
+		w += Width(c.text()) + 3
 	}
 	return w
 }
 
-// drawChip draws a label padded by a space either side at (x, y), its first rune bold,
-// and returns the column after it.
-func drawChip(screen tcell.Screen, x, y int, label string, style tcell.Style) int {
+// drawChip draws a chip padded by a space either side at (x, y), its key bold, and returns
+// the column after it.
+func drawChip(screen tcell.Screen, x, y int, c chip, style tcell.Style) int {
 	screen.SetContent(x, y, ' ', nil, style)
 	x++
-	for i, r := range label {
+	bold := Width(c.key)
+	for i, r := range []rune(c.text()) {
 		s := style
-		if i == 0 {
+		if i < bold {
 			s = s.Bold(true)
 		}
 		screen.SetContent(x, y, r, nil, s)

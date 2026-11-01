@@ -59,23 +59,51 @@ func TestClosingKeysGoOnTheBorder(t *testing.T) {
 	v, _ := box(closing)
 	s := drawn(t, v, 60)
 	legend, border := row(s, 9), row(s, 11)
-	if !strings.Contains(legend, "o Open worktree") || !strings.Contains(legend, "esc close") {
+	if !strings.Contains(legend, "o Open worktree") {
 		t.Errorf("legend row lacks the key that stays: %q", legend)
 	}
-	if strings.Contains(legend, "Accept") || strings.Contains(legend, "Request changes") {
+	if strings.Contains(legend, "Accept") || strings.Contains(legend, "esc") {
 		t.Errorf("legend row shows a key that closes: %q", legend)
 	}
-	if !strings.HasSuffix(edge(border), " y Accept ─ c Request changes ─") {
+	if !strings.HasSuffix(edge(border), " y Accept ─ c Request changes ─ esc close ─") {
 		t.Errorf("border row: %q", border)
 	}
 }
 
-func TestBoxWithoutClosingKeysDrawsAsBefore(t *testing.T) {
+func TestBoxWithoutClosingKeysShowsOnlyEsc(t *testing.T) {
 	v, _ := box(closing[:1])
 	s := drawn(t, v, 60)
-	if strings.ContainsAny(row(s, 11), "oO") {
-		t.Errorf("border row has a chip: %q", row(s, 11))
+	if b := edge(row(s, 11)); !strings.HasSuffix(b, "─ esc close ─") || strings.Contains(b, "Open") {
+		t.Errorf("border row: %q", b)
 	}
+}
+
+func TestLegendIsRightAlignedWithTheNoteLeftOfIt(t *testing.T) {
+	v := NewTextBox(func(rune) {}, func() {})
+	v.Show("T", []string{"body"}, closing, "draft")
+	legend := row(drawn(t, v, 60), 9)
+	// The inner width ends two columns of padding and the border before the right edge.
+	if !strings.HasSuffix(legend, "draft  o Open worktree  │") {
+		t.Errorf("legend row: %q", legend)
+	}
+}
+
+func TestEscChipKeyIsBold(t *testing.T) {
+	v, _ := box(nil)
+	s := drawn(t, v, 30)
+	r := []rune(row(s, 11))
+	for x := range r {
+		if string(r[x:x+3]) == "esc" {
+			for i, wantBold := range []bool{true, true, true, false, false} {
+				_, _, st, _ := s.GetContent(x+i, 11)
+				if _, _, a := st.Decompose(); (a&tcell.AttrBold != 0) != wantBold {
+					t.Errorf("column %d bold = %v", x+i, !wantBold)
+				}
+			}
+			return
+		}
+	}
+	t.Errorf("no esc chip: %q", string(r))
 }
 
 func TestChipBackgroundFollowsTheBorderColor(t *testing.T) {
@@ -95,9 +123,10 @@ func TestChipsFoldFromTheRight(t *testing.T) {
 		w    int
 		want string
 	}{
-		{40, " y Accept ─ c Request changes ─"},
-		{30, " y Accept ─ + More… ─"},
-		{15, " + More… ─"},
+		{48, " y Accept ─ c Request changes ─ esc close ─"},
+		{40, " y Accept ─ + More… ─ esc close ─"},
+		{30, " + More… ─ esc close ─"},
+		{20, "─ esc close ─"},
 	} {
 		v, _ := box(closing)
 		border := row(drawn(t, v, c.w), 11)

@@ -2,11 +2,11 @@
 
 A details dialog offers two kinds of action: those that hand the item on and close the dialog, and those that leave it open. `TextBox` shows the difference in its layout, so the reader sees which keys end the dialog before pressing one. This page covers what the box shows, where each key goes, and what happens when the closing keys do not fit.
 
-image::textbox.svg[A box titled Task with text, a legend row offering o Open worktree and esc close, and chips for Accept, Request changes and Answer on its bottom border]
+image::textbox.svg[A box titled Task with text, a right-aligned legend row offering o Open worktree, and chips for Accept, Request changes, Answer and esc close on its bottom border]
 
 == What the box shows
 
-`Show` fills the box in one call: a title in the border, lines of text with tview's color tags, the keys, and a faint note after the legend when one is given. The text scrolls on the text view's own keys, and `esc` and `q` call the close function. `Size` gives nine tenths of the screen's width up to 120 columns and 85 percent of its height, in the shape `Center` takes.
+`Show` fills the box in one call: a title in the border, lines of text with tview's color tags, the keys, and a faint note left of the legend when one is given. The text scrolls on the text view's own keys, and `esc` and `q` call the close function. `Size` gives nine tenths of the screen's width up to 120 columns and 85 percent of its height, in the shape `Center` takes.
 
 [source,go]
 ----
@@ -23,22 +23,24 @@ pages.AddPage("task", tuingo.Center(box, box.Size), true, true)
 
 A key's `Kind` says what its action does to the box, and the box places it from that:
 
-* `KeyStays`, the zero value, is a key whose action leaves the box open. It sits on the legend row inside the box, followed by the note and `esc close`.
+* `KeyStays`, the zero value, is a key whose action leaves the box open. It sits on the legend row inside the box, right-aligned so it stands above the chips, with the note left of it.
 * `KeyCloses` is a key whose action closes the box. It sits as a chip on the bottom border, right-aligned, with a `─` between chips and before the corner.
 
-A chip is drawn reversed with the border color as its foreground, so it fills with whatever color `SetBorderColor` set and its ink is the terminal's background, on a dark terminal and a light one alike. The kind only decides placement: the box reports every key to `onKey`, and closing it stays with the caller. A box with no closing keys has a plain bottom border.
+`esc` closes the box too, so it is always the last and rightmost chip, even in a box with no closing keys of its own. `q` closes the box as well, without a chip.
+
+A chip is drawn reversed with the border color as its foreground, so it fills with whatever color `SetBorderColor` set and its ink is the terminal's background, on a dark terminal and a light one alike. The kind only decides placement: the box reports every key to `onKey`, and closing it stays with the caller. A box with no closing keys shows `esc close` alone.
 
 == What happens when the chips do not fit
 
-The border has room for its width minus the corners and two columns of margin. When the chips need more, they fold from the right into a `pass:c[+ More…]` chip until the row fits, and the width of that chip counts too, so a chip is never swapped for one that is no narrower. The order of the keys passed to `Show` is their priority: the first key is the last to fold.
+The border has room for its width minus the corners and two columns of margin, and the `esc close` chip's width is set aside first, because it never folds. When the other chips need more, they fold from the right into a `pass:c[+ More…]` chip until the row fits, and the width of that chip counts too, so a chip is never swapped for one that is no narrower. The order of the keys passed to `Show` is their priority: the first key is the last to fold.
 
 image::textbox-folded.svg[The same box, narrower: Accept stays on the border and the other closing keys fold into a + More… chip]
 
-Pressing `pass:c[+]` opens a `KeyPanel` listing the folded keys, with its bottom edge on the row above the border and its right edge on the chip's. `esc` or `q` closes only the panel. When every chip is visible, `pass:c[+]` does nothing.
+Pressing `pass:c[+]` opens a `KeyPanel` listing the folded keys, with its bottom edge on the row above the border and its right edge on the `pass:c[+ More…]` chip's. `esc` or `q` closes only the panel. When every chip is visible, `pass:c[+]` does nothing.
 
 image::textbox-panel.svg[The narrow box with a panel above the + More… chip listing c Request changes and a Answer]
 
 Folded keys stay live: pressing `c` runs it whether its chip shows or not, and closes the panel if it is open. The panel helps the reader find a key and never gates one. Two edge cases follow from the same rules:
 
-* When even `pass:c[+ More…]` does not fit, the border shows no chips, and `pass:c[+]` still opens the panel.
+* When even `pass:c[+ More…]` does not fit beside `esc close`, the border shows `esc close` alone, and `pass:c[+]` still opens the panel.
 * When the caller offers `pass:c[+]` as a key, the caller's key wins, so the panel cannot open, because the box checks offered keys first.
