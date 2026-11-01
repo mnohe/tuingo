@@ -17,7 +17,8 @@ type Lane struct {
 
 // LaneRow lays lanes out left to right at their own widths and keeps the order they are
 // shown in and how far they are scrolled. Pinned lanes stay leftmost in the order they were
-// pinned, never move and never scroll; the others scroll past them a lane at a time, and
+// pinned, never move and never scroll, and their borders are drawn thick, or doubled on a
+// terminal without thick lines; the others scroll past them a lane at a time, and
 // lanes past the right edge are cut off there. The owner decides which lanes are shown and
 // at what width, with SetLanes; the row decides nothing about what a lane holds.
 //
@@ -209,7 +210,8 @@ func (r *LaneRow) widths(width int) ([]int, int) {
 }
 
 // Draw tells the owner the row's width, lays the lanes out and draws them: the pinned ones
-// at the left edge, then the scrolling ones from the offset, cut off at the right edge.
+// at the left edge, their borders drawn thick to mark that they stay put, then the scrolling
+// ones from the offset, cut off at the right edge.
 func (r *LaneRow) Draw(screen tcell.Screen) {
 	r.DrawForSubclass(screen, r)
 	x, y, w, h := r.GetInnerRect()
@@ -231,8 +233,12 @@ func (r *LaneRow) Draw(screen tcell.Screen) {
 		if cx >= right {
 			continue
 		}
-		l.Item.SetRect(cx, y, min(widths[i], right-cx), h)
+		lw := min(widths[i], right-cx)
+		l.Item.SetRect(cx, y, lw, h)
 		l.Item.Draw(screen)
+		if i < first {
+			thicken(screen, cx, y, lw, h)
+		}
 		cx += widths[i]
 	}
 }

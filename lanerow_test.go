@@ -174,3 +174,46 @@ func TestLaneRowScrollsBeforeItsFirstDraw(t *testing.T) {
 		t.Errorf("offset %d after the first draw, want 1", r.Offset())
 	}
 }
+
+// noHeavy is a screen that cannot show thick lines.
+type noHeavy struct{ tcell.Screen }
+
+func (noHeavy) CanDisplay(r rune, _ bool) bool { return r != '┃' && r != '━' }
+
+func TestLaneRowDrawsPinnedBordersThick(t *testing.T) {
+	boxed := func(key string) Lane {
+		b := tview.NewBox().SetBorder(true).SetTitle("T").SetTitleAlign(tview.AlignLeft)
+		return Lane{Key: key, Item: b, Width: 6}
+	}
+	for _, tc := range []struct {
+		name   string
+		wrap   func(tcell.Screen) tcell.Screen
+		corner rune
+		side   rune
+	}{
+		{"thick", func(s tcell.Screen) tcell.Screen { return s }, '┏', '┃'},
+		{"doubled without thick lines", func(s tcell.Screen) tcell.Screen { return noHeavy{s} }, '╔', '║'},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			sim := tcell.NewSimulationScreen("UTF-8")
+			if err := sim.Init(); err != nil {
+				t.Fatal(err)
+			}
+			defer sim.Fini()
+			sim.SetSize(12, 4)
+			r := NewLaneRow(0, "p").SetLanes(boxed("p"), boxed("a"))
+			r.SetRect(0, 0, 12, 4)
+			r.Draw(tc.wrap(sim))
+			at := func(x, y int) rune { c, _, _, _ := sim.GetContent(x, y); return c }
+			if at(0, 0) != tc.corner || at(0, 1) != tc.side || at(5, 2) != tc.side {
+				t.Errorf("pinned lane drawn %q %q %q, want %q and %q", at(0, 0), at(0, 1), at(5, 2), tc.corner, tc.side)
+			}
+			if at(1, 0) != 'T' {
+				t.Errorf("pinned title became %q", at(1, 0))
+			}
+			if c := at(6, 1); c == tc.side {
+				t.Errorf("scrolling lane's side drawn %q, want it left as drawn", c)
+			}
+		})
+	}
+}

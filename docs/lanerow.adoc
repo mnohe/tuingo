@@ -2,7 +2,7 @@
 
 A board shows its lanes side by side, and a user wants to put them in their own order and scroll through more lanes than the screen holds, with the lane they watch most kept in place. `LaneRow` lays lanes out left to right and keeps their order and scroll, whatever the lanes hold.
 
-image::lanerow.svg[A pinned Needs attention lane and a double line at the left, then the Build lane filling the middle and the Done lane cut off at the right edge, with Plan scrolled out of view]
+image::lanerow.svg[A pinned Needs attention lane with a thick border at the left, then the Build lane filling the middle and the Done lane cut off at the right edge, with Plan scrolled out of view]
 
 == How the lanes are laid out
 
@@ -10,11 +10,10 @@ image::lanerow.svg[A pinned Needs attention lane and a double line at the left, 
 
 [source,go]
 ----
-row := tuingo.NewLaneRow(30, "attention", "edge")
+row := tuingo.NewLaneRow(30, "attention")
 row.SetLayFunc(func(width int) {
 	row.SetLanes(
 		tuingo.Lane{Key: "attention", Item: attention, Width: 32},
-		tuingo.Lane{Key: "edge", Item: tuingo.NewDivider(), Width: 1},
 		tuingo.Lane{Key: "plan", Item: plan, Width: 24},
 		tuingo.Lane{Key: "build", Item: build},
 	)
@@ -29,4 +28,4 @@ The row keeps its own order of the keys it has seen. Lanes are drawn in that ord
 * `ScrollBy(n)` shifts the view by `n` lanes, and stops at the first lane and once the last lane is in view. The row clamps the scroll on every draw, so a wider terminal scrolls back what it no longer needs to hide.
 * `Reveal(key)` scrolls the least it takes to bring a lane whole into view, after a move or when the cursor enters a lane.
 
-The keys passed to `NewLaneRow` after `minFill` are pinned: their lanes stay leftmost in that order, never move, never scroll, and no lane moves past them. A screen pins none, one or several, and a `Divider` pinned after them marks the fixed edge.
+The keys passed to `NewLaneRow` after `minFill` are pinned: their lanes stay leftmost in that order, never move, never scroll, and no lane moves past them. A screen pins none, one or several, and the row draws a pinned lane's border thick, or doubled on a terminal that cannot show thick lines, so the fixed lanes stand apart from the ones that scroll past them.
