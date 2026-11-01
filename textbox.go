@@ -35,14 +35,14 @@ func (c chip) text() string { return c.key + " " + c.label }
 // border, cancels the box.
 var (
 	moreChip = chip{"+", "More…"}
-	escChip  = chip{"esc", "╳"}
+	escChip  = chip{"esc", "✕"}
 )
 
 // TextBox is a bordered, titled, scrolling box of dynamic-color text with a right-aligned
 // key legend along its bottom edge, and the keys that close it as chips on its bottom
 // border. Chips that do not fit fold into a "+ More…" chip, and + opens a KeyPanel listing
 // them. Scrolling keys are the text view's; any other key it offers is reported, folded or
-// not. While it is dismissible, as it is by default, esc and q cancel it, and an "esc ╳"
+// not. While it is dismissible, as it is by default, esc and q cancel it, and an "esc ✕"
 // chip at the top right of its border says so.
 type TextBox struct {
 	*tview.Box
@@ -105,7 +105,7 @@ func (v *TextBox) run(r rune) {
 }
 
 // SetDismissible sets whether esc and q cancel the box by calling close, shown by an
-// "esc ╳" chip at the top right of the border. A box that is not dismissible ignores them
+// "esc ✕" chip at the top right of the border. A box that is not dismissible ignores them
 // and shows no chip, so the reader closes it with one of its closing keys; the panel of
 // folded keys still closes on esc and q.
 func (v *TextBox) SetDismissible(on bool) *TextBox {
@@ -185,7 +185,7 @@ func (v *TextBox) chipStyle() tcell.Style {
 	return tcell.StyleDefault.Foreground(v.GetBorderColor()).Reverse(true)
 }
 
-// drawEsc draws the "esc ╳" chip right-aligned on the top border, followed by a ─, when
+// drawEsc draws the "esc ✕" chip right-aligned on the top border, followed by a ─, when
 // the box is dismissible and the chip fits beside the title with a ─ between them.
 func (v *TextBox) drawEsc(screen tcell.Screen) {
 	if v.stuck {

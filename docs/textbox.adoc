@@ -2,7 +2,7 @@
 
 A details dialog offers two kinds of action: those that hand the item on and close the dialog, and those that leave it open. `TextBox` shows the difference in its layout, so the reader sees which keys end the dialog before pressing one. This page covers what the box shows, where each key goes, and what happens when the closing keys do not fit.
 
-image::textbox.svg[A box titled Task with an esc ╳ chip at the top right, text, a right-aligned legend row offering o Open worktree, and chips for Accept, Request changes and Answer on its bottom border]
+image::textbox.svg[A box titled Task with an esc ✕ chip at the top right, text, a right-aligned legend row offering o Open worktree, and chips for Accept, Request changes and Answer on its bottom border]
 
 == What the box shows
 
@@ -32,7 +32,7 @@ A chip is drawn reversed with the border color as its foreground, so it fills wi
 
 == How the box is cancelled
 
-A box is dismissible by default: `esc` and `q` cancel it by calling the close function, and an `esc ╳` chip at the top right of the border says so. The chip sits apart from the closing keys, so it takes none of their room, and gives way to a title too long to leave room for it. Cancelling chooses nothing, so the owner treats it as backing out.
+A box is dismissible by default: `esc` and `q` cancel it by calling the close function, and an `esc ✕` chip at the top right of the border says so. The chip sits apart from the closing keys, so it takes none of their room, and gives way to a title too long to leave room for it. Cancelling chooses nothing, so the owner treats it as backing out.
 
 A dialog that wants an answer, one of its closing keys and nothing else, calls `SetDismissible(false)`: `esc` and `q` then do nothing and the chip is not drawn, so the box never offers a key that does not work.
 
@@ -51,7 +51,7 @@ Pressing `pass:c[+]` opens a `KeyPanel` listing the folded keys, with its bottom
 
 image::textbox-panel.svg[The narrow box with a panel above the + More… chip listing c Request changes and a Answer]
 
-Every chip also answers a click, as its key would: a closing chip runs its key, `esc ╳` cancels the box, `pass:c[+ More…]` opens and closes the panel, and a row of the panel runs its key. A click anywhere else closes the panel, and the mouse wheel scrolls the text.
+Every chip also answers a click, as its key would: a closing chip runs its key, `esc ✕` cancels the box, `pass:c[+ More…]` opens and closes the panel, and a row of the panel runs its key. A click anywhere else closes the panel, and the mouse wheel scrolls the text.
 
 Folded keys stay live: pressing `c` runs it whether its chip shows or not, and closes the panel if it is open. The panel helps the reader find a key and never gates one. Two edge cases follow from the same rules:
 
