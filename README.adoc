@@ -1,6 +1,6 @@
 = tuingo
 
-image::logo.svg[tuingo,321,160]
+image::logo.svg[Tuingo,243,144]
 
 Terminal primitives on https://github.com/rivo/tview[tview] and https://github.com/gdamore/tcell[tcell] for screens built from cards, panes and notices. The package exists because a board of cards laid out on a plane is not a widget tview ships, and the pieces around it (a debounced watcher, a self-clearing notice, a key legend) are the same in every such screen.
 
