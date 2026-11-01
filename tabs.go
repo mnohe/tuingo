@@ -24,12 +24,13 @@ func NewTabs() *Tabs {
 	return t
 }
 
-// Set replaces the labels, marking the one at active.
+// Set replaces the labels, marking the one at active. The active label closes
+// with [::BU] because tview v0.42.0's [::-] leaves underline on (rivo/tview#1177).
 func (t *Tabs) Set(labels []string, active int) {
 	var parts []string
 	for i, l := range labels {
 		if i == active {
-			parts = append(parts, "[::bu] "+tview.Escape(l)+" [::-]")
+			parts = append(parts, "[::bu] "+tview.Escape(l)+" [::BU]")
 		} else {
 			parts = append(parts, "[::d] "+tview.Escape(l)+" [::-]")
 		}
