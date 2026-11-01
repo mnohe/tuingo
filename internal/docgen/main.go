@@ -155,6 +155,23 @@ func scenes() []scene {
 			at(s, tuingo.NewDivider().SetColor(tcell.ColorGray), 14, 0, 1, 6)
 			at(s, scroll, 16, 1, 22, 4)
 		}},
+		{"lanerow", 64, 8, func(s tcell.Screen) {
+			box := func(title, text string) tview.Primitive {
+				v := tview.NewTextView().SetText(text)
+				v.SetBorder(true).SetTitle(" "+title+" ").SetTitleAlign(tview.AlignLeft).SetBorderPadding(0, 0, 1, 1)
+				return v
+			}
+			r := tuingo.NewLaneRow(20, "attention", "edge")
+			r.SetLanes(
+				tuingo.Lane{Key: "attention", Item: box("Needs attention", "review the\nrelease notes"), Width: 19},
+				tuingo.Lane{Key: "edge", Item: tuingo.NewDivider().SetColor(tcell.ColorGray), Width: 1},
+				tuingo.Lane{Key: "plan", Item: box("Plan", "scope the\npilot"), Width: 16},
+				tuingo.Lane{Key: "build", Item: box("Build", "draft the questions\nfor the teams"), Width: 0},
+				tuingo.Lane{Key: "done", Item: box("Done", "tag v0.1.0 and ship it"), Width: 28},
+			)
+			r.ScrollBy(1)
+			at(s, r, 0, 0, 64, 8)
+		}},
 		{"center", 48, 12, func(s tcell.Screen) {
 			b := tview.NewBox().SetBorder(true).SetTitle(" centered ")
 			tuingo.Center(b, func(sw, sh int) (int, int) { return sw / 2, sh / 2 }).Draw(s)
