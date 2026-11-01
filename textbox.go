@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/rivo/uniseg"
 )
 
 // KeyKind is what a key's action does to the text box, which decides where the box shows it.
@@ -295,14 +296,20 @@ func rowWidth(chips []chip) int {
 func drawChip(screen tcell.Screen, x, y int, c chip, style tcell.Style) int {
 	screen.SetContent(x, y, ' ', nil, style)
 	x++
-	bold := Width(c.key)
-	for i, r := range []rune(c.text()) {
+	g := uniseg.NewGraphemes(c.text())
+	bold, column := Width(c.key), 0
+	for g.Next() {
+		if g.Width() == 0 {
+			continue
+		}
 		s := style
-		if i < bold {
+		if column < bold {
 			s = s.Bold(true)
 		}
-		screen.SetContent(x, y, r, nil, s)
-		x++
+		runes := g.Runes()
+		screen.SetContent(x, y, runes[0], runes[1:], s)
+		x += g.Width()
+		column += g.Width()
 	}
 	screen.SetContent(x, y, ' ', nil, style)
 	return x + 1

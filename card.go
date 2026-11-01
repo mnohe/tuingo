@@ -20,7 +20,10 @@ type Card struct {
 // DrawCard draws a card with its top-left at (x, y), w columns wide, and places its
 // rectangle under id, hanging off parent.
 func (p *CardPane) DrawCard(id string, x, y, w int, c Card, parent string) {
-	inner := w - 2
+	if w <= 0 {
+		return
+	}
+	inner := max(0, w-2)
 	lines := Wrap(c.Text, inner)
 	if len(lines) == 0 {
 		lines = []string{""}
@@ -31,10 +34,11 @@ func (p *CardPane) DrawCard(id string, x, y, w int, c Card, parent string) {
 	for len(lines) < 2 {
 		lines = append(lines, "")
 	}
-	label := PadRight(Truncate(c.Label, inner-2), inner-Width(c.Glyph)) + c.Glyph
-	p.Put(x, y, " "+PadRight(label, inner)+" ", c.Title)
+	glyph := Truncate(c.Glyph, inner)
+	label := PadRight(c.Label, inner-Width(glyph)) + glyph
+	p.Put(x, y, PadRight(" "+label, w), c.Title)
 	for i, l := range lines {
-		p.Put(x, y+1+i, " "+PadRight(l, inner)+" ", c.Body)
+		p.Put(x, y+1+i, PadRight(" "+PadRight(l, inner), w), c.Body)
 	}
 	p.Place(id, x, y, w, CardHeight, parent)
 }
