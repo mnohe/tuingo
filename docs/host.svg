@@ -6,7 +6,7 @@
 <rect x="540" y="18" width="27" height="18" fill="#ffffff"/>
 <g fill="#1e1e1e" font-weight="bold"><text x="540" y="31">e</text><text x="549" y="31">s</text><text x="558" y="31">c</text></g>
 <rect x="567" y="18" width="27" height="18" fill="#ffffff"/>
-<g fill="#1e1e1e"><text x="576" y="31">╳</text></g>
+<g fill="#1e1e1e"><text x="576" y="31">✕</text></g>
 <g fill="#ffffff"><text x="594" y="31">─</text><text x="603" y="31">╮</text></g>
 <g fill="#ffffff"><text x="36" y="49">│</text></g>
 <g fill="#ffffff"><text x="603" y="49">│</text></g>
