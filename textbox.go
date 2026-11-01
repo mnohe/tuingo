@@ -31,19 +31,19 @@ type chip struct{ key, label string }
 // text is the chip's label as drawn, without its padding.
 func (c chip) text() string { return c.key + " " + c.label }
 
-// moreChip stands in for the closing keys folded off the border, and escChip closes the
-// box. Esc is drawn last and never folds.
+// moreChip stands in for the closing keys folded off the border, and escChip, on the top
+// border, cancels the box.
 var (
 	moreChip = chip{"+", "More…"}
-	escChip  = chip{"esc", "close"}
+	escChip  = chip{"esc", "✖"}
 )
 
 // TextBox is a bordered, titled, scrolling box of dynamic-color text with a right-aligned
 // key legend along its bottom edge, and the keys that close it as chips on its bottom
-// border, esc last. Chips that do not fit fold into a "+ More…" chip, and + opens a
-// KeyPanel listing them; esc never folds.
-// Scrolling keys are the text view's; esc and q close it; any other key it offers is
-// reported, folded or not.
+// border. Chips that do not fit fold into a "+ More…" chip, and + opens a KeyPanel listing
+// them. Scrolling keys are the text view's; any other key it offers is reported, folded or
+// not. While it is dismissible, as it is by default, esc and q cancel it, and an "esc ✖"
+// chip at the top right of its border says so.
 type TextBox struct {
 	*tview.Box
 	text     *tview.TextView
@@ -55,11 +55,13 @@ type TextBox struct {
 	open     bool
 	onKey    func(r rune)
 	close    func()
+	stuck    bool
 	blocks   []Block
 	rendered string
 }
 
-// NewTextBox returns an empty box; onKey receives an offered key, close runs on esc or q.
+// NewTextBox returns an empty, dismissible box; onKey receives an offered key, close runs on
+// esc or q.
 func NewTextBox(onKey func(r rune), close func()) *TextBox {
 	v := &TextBox{
 		Box:   tview.NewBox(),
@@ -74,7 +76,7 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 		switch {
 		case v.open && (ev.Key() == tcell.KeyEsc || ev.Rune() == 'q'):
 			v.open = false
-		case ev.Key() == tcell.KeyEsc, ev.Rune() == 'q':
+		case !v.stuck && (ev.Key() == tcell.KeyEsc || ev.Rune() == 'q'):
 			v.close()
 		case ev.Key() == tcell.KeyRune && v.keys[ev.Rune()]:
 			v.open = false
@@ -89,9 +91,18 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 	return v
 }
 
+// SetDismissible sets whether esc and q cancel the box by calling close, shown by an
+// "esc ✖" chip at the top right of the border. A box that is not dismissible ignores them
+// and shows no chip, so the reader closes it with one of its closing keys; the panel of
+// folded keys still closes on esc and q.
+func (v *TextBox) SetDismissible(on bool) *TextBox {
+	v.stuck = !on
+	return v
+}
+
 // Show fills the box: the title in its border, the lines, the keys that leave it open in
 // the right-aligned legend with a faint note left of them when given, and the keys that
-// close it on the bottom border followed by esc, the first the last to fold.
+// close it on the bottom border, the first the last to fold.
 func (v *TextBox) Show(title string, lines []string, keys []Key, note string) {
 	v.blocks = nil
 	v.SetTitle(" " + title + " ")
@@ -127,8 +138,9 @@ func (v *TextBox) Size(sw, sh int) (int, int) {
 	return w, sh * 85 / 100
 }
 
-// Draw draws the frame, the text, the legend on the two bottom rows, the closing keys on
-// the bottom border, and the key panel above them when open.
+// Draw draws the frame, the text, the legend on the two bottom rows, the esc chip on the
+// top border, the closing keys on the bottom border, and the key panel above them when
+// open.
 func (v *TextBox) Draw(screen tcell.Screen) {
 	v.DrawForSubclass(screen, v)
 	x, y, w, h := v.GetInnerRect()
@@ -149,17 +161,41 @@ func (v *TextBox) Draw(screen tcell.Screen) {
 	v.text.Draw(screen)
 	v.hints.SetRect(x, y+h-2, w, 2)
 	v.hints.Draw(screen)
+	v.drawEsc(screen)
 	v.drawChips(screen)
 }
 
+// chipStyle is a chip's look: reversed, it fills with the border color and its ink is the
+// screen's background, whatever the terminal's theme.
+func (v *TextBox) chipStyle() tcell.Style {
+	return tcell.StyleDefault.Foreground(v.GetBorderColor()).Reverse(true)
+}
+
+// drawEsc draws the "esc ✖" chip right-aligned on the top border, followed by a ─, when
+// the box is dismissible and the chip fits beside the title with a ─ between them.
+func (v *TextBox) drawEsc(screen tcell.Screen) {
+	if v.stuck {
+		return
+	}
+	bx, by, bw, _ := v.GetRect()
+	row := rowWidth([]chip{escChip})
+	if 1+tview.TaggedStringWidth(v.GetTitle())+1+row+1 > bw {
+		return
+	}
+	drawChip(screen, bx+bw-1-row, by, escChip, v.chipStyle())
+}
+
 // drawChips draws the closing keys right-aligned on the bottom border, each followed by a
-// ─ and esc last, folding from the right into a "+ More…" chip until the row fits, and the
-// key panel listing the folded keys, its bottom on the row above the border and its right
-// edge on the chip's. Esc's width is reserved before the other chips are fitted.
+// ─, folding from the right into a "+ More…" chip until the row fits, and the key panel
+// listing the folded keys, its bottom on the row above the border and its right edge on
+// the chip's.
 func (v *TextBox) drawChips(screen tcell.Screen) {
+	if len(v.closing) == 0 {
+		return
+	}
 	bx, by, bw, bh := v.GetRect()
 	avail := bw - 4
-	shown, folded := fold(v.closing, avail-rowWidth([]chip{escChip}))
+	shown, folded := fold(v.closing, avail)
 	v.folded = v.closing[len(shown):]
 	chips := make([]chip, 0, len(shown)+2)
 	for _, k := range shown {
@@ -168,17 +204,10 @@ func (v *TextBox) drawChips(screen tcell.Screen) {
 	if folded {
 		chips = append(chips, moreChip)
 	}
-	chips = append(chips, escChip)
 	right := bx + bw - 2
-	// Reversed, the chip fills with the border color and its ink is the screen's background,
-	// whatever the terminal's theme.
-	style := tcell.StyleDefault.Foreground(v.GetBorderColor()).Reverse(true)
-	if rowWidth(chips) > avail && folded {
-		// Esc alone, so every box shows at least one chip; + still opens the panel.
-		chips = chips[len(chips)-1:]
-	}
-	// The panel's right edge sits on the "+ More…" chip's, or on the border's when it is
-	// not drawn.
+	style := v.chipStyle()
+	// The panel's right edge sits on the "+ More…" chip's, or on the border's when no chip
+	// fits.
 	edge := right - 1
 	if row := rowWidth(chips); row <= avail {
 		cx := right - row + 1
