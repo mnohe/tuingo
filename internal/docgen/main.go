@@ -108,6 +108,18 @@ func scenes() []scene {
 			p.Select("plan")
 			at(s, p, 0, 0, 64, 12)
 		}},
+		{"table", 72, 12, func(s tcell.Screen) {
+			b := tuingo.NewTextBox(func(rune) {}, func() {})
+			b.ShowBlocks("History", []tuingo.Block{
+				tuingo.Lines{"[::b]Recent changes[::B]", ""},
+				tuingo.Table{Rows: [][]string{
+					{"23 Sep 08:21", "ongoing", "Started"},
+					{"23 Sep 08:26", "paused", "Three questions drafted; waiting for the owning teams to answer before the pilot can start"},
+					{"23 Sep 09:42", "done", "All three answered: the pilot moves to ready"},
+				}},
+			}, nil, "")
+			at(s, b, 0, 0, 72, 12)
+		}},
 		{"textbox", 72, 12, textBox(72, false)},
 		{"textbox-folded", 40, 12, textBox(40, false)},
 		{"textbox-panel", 40, 12, textBox(40, true)},
