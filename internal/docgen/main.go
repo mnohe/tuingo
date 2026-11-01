@@ -198,6 +198,16 @@ func scenes() []scene {
 			d.SetBorder(true).SetTitle(" Filter ").SetTitleAlign(tview.AlignLeft).SetBorderPadding(0, 0, 1, 1)
 			tuingo.Anchor(d, f, "f", func(int, int) (int, int) { return 16, 5 }).Draw(s)
 		}},
+		{"host", 72, 14, func(s tcell.Screen) {
+			app := tview.NewApplication()
+			lanes := tview.NewTextView().SetText("\n  Plan      Build      Review")
+			h := tuingo.NewHost(app, lanes)
+			b := tuingo.NewTextBox(func(rune) {}, func() {})
+			b.Show("Task", text, keys, "")
+			h.Open("details", tuingo.Center(b, func(sw, sh int) (int, int) { return 64, 12 }))
+			h.Confirm("Accept the task?", func(bool) {})
+			at(s, h, 0, 0, 72, 14)
+		}},
 		{"center", 48, 12, func(s tcell.Screen) {
 			b := tview.NewBox().SetBorder(true).SetTitle(" centered ")
 			tuingo.Center(b, func(sw, sh int) (int, int) { return sw / 2, sh / 2 }).Draw(s)

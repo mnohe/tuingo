@@ -6,7 +6,20 @@ image::confirm.svg[A modal asking Discard the draft? with Yes and No buttons]
 
 == How an answer arrives
 
-`done` receives `true` for Yes or `y`, and `false` for No, `n` or `esc`. The modal does not remove itself, so `done` is where the owner takes it off the screen.
+`done` receives `true` for Yes or `y`, and `false` for No, `n` or `esc`.
+
+Open it through a link:host.adoc[`Host`], which closes it before calling `done`, restores focus to where it was, and keeps the keyboard on the question even when the application moves focus while it is open:
+
+[source,go]
+----
+host.Confirm("Discard the draft?", func(yes bool) {
+	if yes {
+		discard()
+	}
+})
+----
+
+On its own, the modal does not remove itself, so `done` is where the owner takes it off the screen. It is then modal only as long as the application leaves focus on it:
 
 [source,go]
 ----
