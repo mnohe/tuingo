@@ -6,6 +6,7 @@ package tuingo
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/rivo/uniseg"
 )
 
 // Rect is a placed rectangle with an id and the id of the rectangle it hangs off.
@@ -18,7 +19,9 @@ type Rect struct {
 
 type cell struct {
 	r     rune
+	comb  []rune
 	style tcell.Style
+	width int // -1 marks the trailing column of a wide grapheme
 }
 
 // CardPane is a bordered, titled viewport over a plane of cells larger than itself, with
@@ -68,25 +71,57 @@ func (p *CardPane) Clear() {
 	p.rows, p.rects = nil, nil
 }
 
-// Put writes text on the plane at (x, y), one rune per column.
+// Put writes plain text on the plane at (x, y) in terminal columns. Grapheme clusters
+// stay intact, including wide characters and combining marks. Text outside the top or
+// left edge is clipped; a wide character crossing the left edge is omitted.
 func (p *CardPane) Put(x, y int, text string, style tcell.Style) {
+	if y < 0 {
+		return
+	}
 	for len(p.rows) <= y {
 		p.rows = append(p.rows, nil)
 	}
 	row := p.rows[y]
-	for _, r := range text {
-		for len(row) <= x {
-			row = append(row, cell{' ', tcell.StyleDefault})
+	blank := cell{r: ' ', style: tcell.StyleDefault, width: 1}
+	clear := func(at int) {
+		if row[at].width == -1 && at > 0 {
+			row[at-1] = blank
 		}
-		row[x] = cell{r, style}
-		x++
+		if row[at].width == 2 && at+1 < len(row) {
+			row[at+1] = blank
+		}
+		row[at] = blank
+	}
+	g := uniseg.NewGraphemes(text)
+	for g.Next() {
+		w := g.Width()
+		if w == 0 {
+			continue
+		}
+		if x < 0 {
+			x += w
+			continue
+		}
+		for len(row) < x+w {
+			row = append(row, blank)
+		}
+		for i := 0; i < w; i++ {
+			clear(x + i)
+		}
+		runes := g.Runes()
+		row[x] = cell{r: runes[0], comb: runes[1:], style: style, width: w}
+		if w == 2 {
+			row[x+1] = cell{r: ' ', style: style, width: -1}
+		}
+		x += w
 	}
 	p.rows[y] = row
 }
 
-// At returns the rune on the plane at (x, y), a space where nothing was put.
+// At returns the first rune of the grapheme at (x, y), a space where nothing was put
+// or in the trailing column of a wide grapheme.
 func (p *CardPane) At(x, y int) rune {
-	if y < len(p.rows) && x < len(p.rows[y]) {
+	if y >= 0 && x >= 0 && y < len(p.rows) && x < len(p.rows[y]) {
 		return p.rows[y][x].r
 	}
 	return ' '
@@ -198,7 +233,7 @@ func (p *CardPane) Reveal() {
 }
 
 // ScrollTo sets the plane coordinate shown at the viewport's top-left corner.
-func (p *CardPane) ScrollTo(x, y int) { p.ox, p.oy = x, y }
+func (p *CardPane) ScrollTo(x, y int) { p.ox, p.oy = max(0, x), max(0, y) }
 
 // Offset returns the plane coordinate shown at the viewport's top-left corner.
 func (p *CardPane) Offset() (x, y int) { return p.ox, p.oy }
@@ -223,7 +258,18 @@ func (p *CardPane) Draw(screen tcell.Screen) {
 			if px >= len(row) {
 				break
 			}
-			screen.SetContent(x0+x, y0+y, row[px].r, nil, row[px].style)
+			c := row[px]
+			if c.width == -1 {
+				if x == 0 {
+					screen.SetContent(x0+x, y0+y, ' ', nil, c.style)
+				}
+				continue
+			}
+			if c.width > w-x {
+				screen.SetContent(x0+x, y0+y, ' ', nil, c.style)
+				continue
+			}
+			screen.SetContent(x0+x, y0+y, c.r, c.comb, c.style)
 		}
 	}
 }

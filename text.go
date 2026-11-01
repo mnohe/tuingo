@@ -2,14 +2,20 @@ package tuingo
 
 import (
 	"strings"
-	"unicode/utf8"
+
+	"github.com/rivo/uniseg"
 )
 
-// Width is the number of columns a string takes, counting one per rune.
-func Width(s string) int { return utf8.RuneCountInString(s) }
+// Width is the number of terminal columns in plain text, counting whole grapheme clusters.
+// Wide characters occupy two columns; combining marks stay with their base character.
+func Width(s string) int { return uniseg.StringWidth(s) }
 
-// Wrap breaks text into lines of at most w columns at word boundaries.
+// Wrap breaks text at word boundaries to fit w terminal columns. Words wider than w
+// remain intact on their own line. Non-positive widths return no lines.
 func Wrap(text string, w int) []string {
+	if w <= 0 {
+		return nil
+	}
 	var lines []string
 	var cur string
 	for _, word := range strings.Fields(text) {
@@ -31,7 +37,13 @@ func Wrap(text string, w int) []string {
 
 // Shorten keeps the leading words that fit in w columns, with an ellipsis when any were cut.
 func Shorten(text string, w int) string {
+	if w <= 0 {
+		return ""
+	}
 	words := strings.Fields(text)
+	if normalized := strings.Join(words, " "); Width(normalized) <= w {
+		return normalized
+	}
 	out := ""
 	for _, word := range words {
 		next := word
@@ -51,16 +63,27 @@ func Shorten(text string, w int) string {
 
 // PadRight pads or truncates s to exactly n columns.
 func PadRight(s string, n int) string {
-	if w := Width(s); w < n {
-		return s + strings.Repeat(" ", n-w)
+	if n <= 0 {
+		return ""
 	}
-	return Truncate(s, n)
+	s = Truncate(s, n)
+	return s + strings.Repeat(" ", n-Width(s))
 }
 
-// Truncate keeps the first n columns of s.
+// Truncate keeps the longest prefix fitting n terminal columns without splitting a
+// grapheme cluster. Non-positive widths return an empty string.
 func Truncate(s string, n int) string {
-	if Width(s) <= n {
-		return s
+	if n <= 0 {
+		return ""
 	}
-	return string([]rune(s)[:n])
+	g := uniseg.NewGraphemes(s)
+	end, width := 0, 0
+	for g.Next() {
+		width += g.Width()
+		if width > n {
+			break
+		}
+		_, end = g.Positions()
+	}
+	return s[:end]
 }
