@@ -1,0 +1,27 @@
+= tuingo 1.0.0
+
+Release notes prepared for the first stable release.
+
+== Stable API
+
+The public API covers card panes, cards, trees and lanes; text dialogs with action chips; confirmations, tabs, notices, key legends, dividers and centered overlays; text and color helpers; and a debounced directory watcher.
+
+From 1.0.0, incompatible public API changes require a new major version. Patch releases fix bugs, and minor releases may add compatible functionality. The module path remains `github.com/mnohe/tuingo`.
+
+== Release highlights
+
+* Text helpers, card planes and dialog chips use terminal display widths. Truncation keeps grapheme clusters whole, including combining marks, wide characters and emoji sequences. A wide character clipped by a viewport edge is omitted rather than drawn partially.
+* `Shorten` preserves text that exactly fits. Non-positive text widths return empty text; `Wrap` keeps an oversized word intact on its own line. These helpers accept plain text, without tview color markup or terminal escape sequences.
+* `Watch` rejects missing roots and files, returns setup errors, and registers nested directories in newly created or moved directory trees. Its callbacks run serially on a background goroutine. Stopping cancels pending work and waits for an active callback to finish; callbacks must not call stop or wait for another goroutine that calls it. Runtime filesystem errors and newly discovered directories are handled on a best-effort basis.
+* A runnable board example demonstrates navigation, selection highlighting, Unicode text and quitting: `go run ./examples`.
+* CI and tagged releases run the race detector as well as ordinary tests, formatting and vet checks.
+
+== Requirements and usage
+
+Go 1.27.1 or later is required. Terminal rendering follows tcell and uniseg width conventions; the terminal and font must support the characters being displayed.
+
+As with tview, mutate UI state on the application loop. Pass `func(f func()) { app.QueueUpdateDraw(f) }` to `NewNotice`, and dispatch UI changes made by watcher callbacks through that loop.
+
+The implementation under `internal/`, generated documentation images and example programs are outside the public library API.
+
+See link:README.adoc[README] for installation and link:docs/index.adoc[the primitive reference] for usage.

@@ -4,7 +4,7 @@
 
 [source,sh]
 ----
-make lint test
+make lint test race
 ----
 
 `make lint` fails on any file `gofmt` would change and runs `go vet`. CI runs the same checks, plus `go build ./...`, on every push to `main` and on every pull request.
@@ -25,19 +25,20 @@ The generator sits under `internal/`, so no other module can import it, though i
 tuingo is a Go library, so a release is a version tag. Consumers get it with `go get github.com/mnohe/tuingo@vX.Y.Z`.
 
 . Make sure `main` is green in the Actions tab and contains what you want to ship.
-. Pick the next https://semver.org[semantic version]. Before `v1.0.0`, breaking changes bump the minor version.
+. Pick the next https://semver.org[semantic version]. From `v1.0.0`, incompatible public API changes require a new major version.
+. Review `RELEASE_NOTES.adoc` and run `go run ./examples` in a terminal. Check navigation, selection highlighting, and quitting with `q`.
 . Tag the commit and push the tag:
 +
 [source,sh]
 ----
 git checkout main && git pull
-git tag v0.1.0
-git push origin v0.1.0
+git tag v1.0.0
+git push origin v1.0.0
 ----
 
 Pushing the tag starts the `release` workflow (`.github/workflows/release.yml`), which:
 
-. runs `make lint` and `make test` on the tagged commit,
+. runs `make lint`, `make test`, and `make race` on the tagged commit,
 . creates a GitHub Release named after the tag with generated notes and the source archives,
 . asks `proxy.golang.org` for the version so `go get` sees it straight away.
 

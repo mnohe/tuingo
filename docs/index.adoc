@@ -18,6 +18,6 @@
 
 == Other helpers
 
-* `Watch`: a debounced, recursive file watcher that skips `.git`.
-* `Wrap`, `Shorten`, `PadRight`, `Truncate`, `Width`: text wrapping, sizing and alignment helpers.
+* `Watch`: a debounced, recursive directory watcher that skips `.git`, reports setup errors, and cancels pending work when stopped. Callbacks run serially in the background; marshal UI updates onto the application loop.
+* `Wrap`, `Shorten`, `PadRight`, `Truncate`, `Width`: plain-text wrapping, sizing and alignment in terminal display columns. Wide characters take two columns, and combining marks and emoji sequences remain whole. `Wrap` preserves words longer than the requested width on their own line.
 * `RoundedTheme`: rounded borders on the terminal's own background.
