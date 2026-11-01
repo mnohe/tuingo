@@ -172,6 +172,24 @@ func scenes() []scene {
 			r.ScrollBy(1)
 			at(s, r, 0, 0, 64, 8)
 		}},
+		{"choice", 24, 5, func(s tcell.Screen) {
+			c := tuingo.NewChoice(func(string) {}, func() {})
+			c.Show("Sort", []tuingo.Option{{Key: "new", Label: "Newest first"}, {Key: "old", Label: "Oldest first"}, {Key: "az", Label: "By name"}}, "old")
+			w, h := c.Size(24, 5)
+			at(s, c, 0, 0, w, h)
+		}},
+		{"checklist", 24, 7, func(s tcell.Screen) {
+			c := tuingo.NewChecklist(func(string) {}, func() {})
+			c.Show("Show", []tuingo.Row{
+				{Key: "flag", Label: "Flagged"},
+				{Key: "team", Label: "Team", Header: true},
+				{Key: "ann", Label: "Ann", Muted: true},
+				{Key: "bo", Label: "Bo", Muted: true},
+				{Key: "done", Label: "Done tasks"},
+			}, map[string]bool{"flag": true, "ann": true})
+			w, h := c.Size(24, 7)
+			at(s, c, 0, 0, w, h)
+		}},
 		{"anchor", 60, 9, func(s tcell.Screen) {
 			f := tuingo.NewFooter()
 			f.Set("←↑↓→", "move", "f", "filter", "/", "find", "q", "quit")

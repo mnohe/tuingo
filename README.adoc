@@ -15,6 +15,7 @@ What it holds, with a page and a picture for each primitive under link:docs[docs
 * link:docs/keypanel.adoc[`KeyPanel`]: a bordered column of keys, one per line in the legend's style, that shows keys and handles none. `Legend` is the format, `Footer` lays it out as a row and `KeyPanel` as a column.
 * link:docs/divider.adoc[`Divider`]: a one-column vertical double line, for the fixed edge between a pinned pane and the panes that scroll past it.
 * link:docs/lanerow.adoc[`LaneRow`]: a row of lanes at their own widths, one filling what the others leave, that the user reorders and scrolls sideways past the lanes the owner pins.
+* link:docs/choice.adoc[`Choice`] and link:docs/checklist.adoc[`Checklist`]: bordered dialogs that list options as a radio list, where one row is current, and as a checklist, where each row toggles on its own; space chooses a row, enter and esc close, and the owner decides what a choice means.
 * link:docs/center.adoc[`Center`]: draws a primitive centered on the screen at a size computed from the screen's.
 * link:docs/anchor.adoc[`Anchor`]: draws a primitive standing on a `Footer`, above the key that opened it; `Footer.Column` gives the column the footer draws a key at.
 * `Wrap`, `Shorten`, `PadRight`, `Truncate`, `Width`: text helpers that count columns per rune.
