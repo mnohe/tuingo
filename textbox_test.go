@@ -65,16 +65,55 @@ func TestClosingKeysGoOnTheBorder(t *testing.T) {
 	if strings.Contains(legend, "Accept") || strings.Contains(legend, "esc") {
 		t.Errorf("legend row shows a key that closes: %q", legend)
 	}
-	if !strings.HasSuffix(edge(border), " y Accept ─ c Request changes ─ esc close ─") {
+	if !strings.HasSuffix(edge(border), " y Accept ─ c Request changes ─") {
 		t.Errorf("border row: %q", border)
 	}
 }
 
-func TestBoxWithoutClosingKeysShowsOnlyEsc(t *testing.T) {
+func TestBoxWithoutClosingKeysHasAPlainBottomBorder(t *testing.T) {
 	v, _ := box(closing[:1])
 	s := drawn(t, v, 60)
-	if b := edge(row(s, 11)); !strings.HasSuffix(b, "─ esc close ─") || strings.Contains(b, "Open") {
+	if b := edge(row(s, 11)); strings.Trim(b, "└─") != "" {
 		t.Errorf("border row: %q", b)
+	}
+}
+
+func TestEscChipSitsTopRightWhileDismissible(t *testing.T) {
+	v, _ := box(closing)
+	closed := false
+	v.close = func() { closed = true }
+	if top := edge(row(drawn(t, v, 60), 0)); !strings.HasPrefix(top, "┌ T ─") || !strings.HasSuffix(top, "─ esc ✖ ─") {
+		t.Errorf("top border: %q", top)
+	}
+	press(v, tcell.NewEventKey(tcell.KeyEsc, 0, 0))
+	if !closed {
+		t.Error("esc did not cancel a dismissible box")
+	}
+}
+
+func TestBoxThatIsNotDismissibleIgnoresEscAndShowsNoChip(t *testing.T) {
+	v, _ := box(closing)
+	closed := false
+	v.close = func() { closed = true }
+	v.SetDismissible(false)
+	if top := edge(row(drawn(t, v, 60), 0)); strings.Contains(top, "esc") {
+		t.Errorf("top border: %q", top)
+	}
+	press(v, tcell.NewEventKey(tcell.KeyEsc, 0, 0))
+	press(v, tcell.NewEventKey(tcell.KeyRune, 'q', 0))
+	if closed {
+		t.Error("esc or q closed a box that is not dismissible")
+	}
+}
+
+func TestEscChipGivesWayToALongTitle(t *testing.T) {
+	v := NewTextBox(func(rune) {}, func() {})
+	v.Show(strings.Repeat("t", 14), []string{"body"}, nil, "")
+	if top := row(drawn(t, v, 26), 0); strings.Contains(top, "esc") {
+		t.Errorf("chip drawn over the title: %q", top)
+	}
+	if top := row(drawn(t, v, 27), 0); !strings.Contains(top, "─ esc ✖ ─┐") {
+		t.Errorf("chip missing with room for it: %q", top)
 	}
 }
 
@@ -91,11 +130,11 @@ func TestLegendIsRightAlignedWithTheNoteLeftOfIt(t *testing.T) {
 func TestEscChipKeyIsBold(t *testing.T) {
 	v, _ := box(nil)
 	s := drawn(t, v, 30)
-	r := []rune(row(s, 11))
+	r := []rune(row(s, 0))
 	for x := range r {
 		if string(r[x:x+3]) == "esc" {
 			for i, wantBold := range []bool{true, true, true, false, false} {
-				_, _, st, _ := s.GetContent(x+i, 11)
+				_, _, st, _ := s.GetContent(x+i, 0)
 				if _, _, a := st.Decompose(); (a&tcell.AttrBold != 0) != wantBold {
 					t.Errorf("column %d bold = %v", x+i, !wantBold)
 				}
@@ -123,10 +162,9 @@ func TestChipsFoldFromTheRight(t *testing.T) {
 		w    int
 		want string
 	}{
-		{48, " y Accept ─ c Request changes ─ esc close ─"},
-		{40, " y Accept ─ + More… ─ esc close ─"},
-		{30, " + More… ─ esc close ─"},
-		{20, "─ esc close ─"},
+		{40, " y Accept ─ c Request changes ─"},
+		{30, " y Accept ─ + More… ─"},
+		{15, " + More… ─"},
 	} {
 		v, _ := box(closing)
 		border := row(drawn(t, v, c.w), 11)
