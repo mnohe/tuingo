@@ -190,6 +190,14 @@ func scenes() []scene {
 			w, h := c.Size(24, 7)
 			at(s, c, 0, 0, w, h)
 		}},
+		{"anchor", 60, 9, func(s tcell.Screen) {
+			f := tuingo.NewFooter()
+			f.Set("←↑↓→", "move", "f", "filter", "/", "find", "q", "quit")
+			at(s, f, 0, 8, 60, 1)
+			d := tview.NewTextView().SetText("ongoing\npaused\ndone")
+			d.SetBorder(true).SetTitle(" Filter ").SetTitleAlign(tview.AlignLeft).SetBorderPadding(0, 0, 1, 1)
+			tuingo.Anchor(d, f, "f", func(int, int) (int, int) { return 16, 5 }).Draw(s)
+		}},
 		{"center", 48, 12, func(s tcell.Screen) {
 			b := tview.NewBox().SetBorder(true).SetTitle(" centered ")
 			tuingo.Center(b, func(sw, sh int) (int, int) { return sw / 2, sh / 2 }).Draw(s)

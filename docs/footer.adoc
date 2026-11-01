@@ -13,3 +13,7 @@ image::footer.svg[A legend row: arrows move, enter open, / search, q quit]
 footer := tuingo.NewFooter()
 footer.Set("←↑↓→", "move", "enter", "open", "q", "quit")
 ----
+
+== Where a key sits
+
+`Column` returns the column, from the footer's left edge, at which the footer draws a key from the pairs last passed to `Set`, or -1 when the footer does not list it. The layout is computed in one place, so `Anchor` places a dialog above its key without repeating it.
