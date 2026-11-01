@@ -51,6 +51,8 @@ Pressing `pass:c[+]` opens a `KeyPanel` listing the folded keys, with its bottom
 
 image::textbox-panel.svg[The narrow box with a panel above the + More… chip listing c Request changes and a Answer]
 
+Every chip also answers a click, as its key would: a closing chip runs its key, `esc ╳` cancels the box, `pass:c[+ More…]` opens and closes the panel, and a row of the panel runs its key. A click anywhere else closes the panel, and the mouse wheel scrolls the text.
+
 Folded keys stay live: pressing `c` runs it whether its chip shows or not, and closes the panel if it is open. The panel helps the reader find a key and never gates one. Two edge cases follow from the same rules:
 
 * When even `pass:c[+ More…]` does not fit, the border shows no chips, and `pass:c[+]` still opens the panel.

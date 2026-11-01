@@ -2,11 +2,24 @@
 
 A yes-or-no question should answer the keys a reader reaches for without moving to the buttons. `Confirm` returns a tview modal with Yes and No buttons that also answers `y`, `n` and `esc`.
 
-image::confirm.svg[A modal asking Discard the draft? with Yes and No buttons]
+image::confirm.svg[A modal asking Discard the draft? with Yes selected on a light background and No on the dialog's own background]
 
 == How an answer arrives
 
-`done` receives `true` for Yes or `y`, and `false` for No, `n` or `esc`. The modal does not remove itself, so `done` is where the owner takes it off the screen.
+`done` receives `true` for Yes or `y`, and `false` for No, `n` or `esc`.
+
+Open it through a link:host.adoc[`Host`], which closes it before calling `done`, restores focus to where it was, and keeps the keyboard on the question even when the application moves focus while it is open:
+
+[source,go]
+----
+host.Confirm("Discard the draft?", func(yes bool) {
+	if yes {
+		discard()
+	}
+})
+----
+
+On its own, the modal does not remove itself, so `done` is where the owner takes it off the screen. It is then modal only as long as the application leaves focus on it:
 
 [source,go]
 ----
@@ -18,4 +31,4 @@ pages.AddPage("confirm", tuingo.Confirm("Discard the draft?", func(yes bool) {
 }), true, true)
 ----
 
-The colors are tview's modal colors, so `tview.Styles` decides them.
+Only the selected button has a background of its own, in the primary text color with the inverse text color as its ink; the other sits on the dialog's background in the primary text color, so the selection is the one thing that stands out. The colors come from `tview.Styles` when `Confirm` is called.

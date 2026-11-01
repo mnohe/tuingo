@@ -58,6 +58,14 @@ type TextBox struct {
 	stuck    bool
 	blocks   []Block
 	rendered string
+	targets  []target
+}
+
+// target is a place on screen a click runs an action from: a chip, or a row of the key
+// panel.
+type target struct {
+	x, y, w int
+	act     func()
 }
 
 // NewTextBox returns an empty, dismissible box; onKey receives an offered key, close runs on
@@ -79,8 +87,7 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 		case !v.stuck && (ev.Key() == tcell.KeyEsc || ev.Rune() == 'q'):
 			v.close()
 		case ev.Key() == tcell.KeyRune && v.keys[ev.Rune()]:
-			v.open = false
-			v.onKey(ev.Rune())
+			v.run(ev.Rune())
 		case ev.Rune() == '+' && len(v.folded) > 0:
 			v.open = true
 		default:
@@ -89,6 +96,12 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 		return nil
 	})
 	return v
+}
+
+// run closes the panel and reports an offered key.
+func (v *TextBox) run(r rune) {
+	v.open = false
+	v.onKey(r)
 }
 
 // SetDismissible sets whether esc and q cancel the box by calling close, shown by an
@@ -143,6 +156,7 @@ func (v *TextBox) Size(sw, sh int) (int, int) {
 // open.
 func (v *TextBox) Draw(screen tcell.Screen) {
 	v.DrawForSubclass(screen, v)
+	v.targets = v.targets[:0]
 	x, y, w, h := v.GetInnerRect()
 	if v.blocks != nil {
 		var lines []string
@@ -182,7 +196,9 @@ func (v *TextBox) drawEsc(screen tcell.Screen) {
 	if 1+tview.TaggedStringWidth(v.GetTitle())+1+row+1 > bw {
 		return
 	}
-	drawChip(screen, bx+bw-1-row, by, escChip, v.chipStyle())
+	x := bx + bw - 1 - row
+	drawChip(screen, x, by, escChip, v.chipStyle())
+	v.targets = append(v.targets, target{x, by, row - 1, v.close})
 }
 
 // drawChips draws the closing keys right-aligned on the bottom border, each followed by a
@@ -211,8 +227,15 @@ func (v *TextBox) drawChips(screen tcell.Screen) {
 	edge := right - 1
 	if row := rowWidth(chips); row <= avail {
 		cx := right - row + 1
-		for _, c := range chips {
+		for i, c := range chips {
+			act := func() { v.open = !v.open }
+			if i < len(shown) {
+				r := shown[i].Rune
+				act = func() { v.run(r) }
+			}
+			start := cx
 			cx = drawChip(screen, cx, by+bh-1, c, style) + 1
+			v.targets = append(v.targets, target{start, by + bh - 1, cx - 1 - start, act})
 			if c == moreChip {
 				edge = cx - 2
 			}
@@ -228,8 +251,15 @@ func (v *TextBox) drawChips(screen tcell.Screen) {
 	v.panel.Set(pairs...)
 	pw, ph := v.panel.Size()
 	px, py := max(edge-pw+1, bx+1), max(by+bh-1-ph, by+1)
-	v.panel.SetRect(px, py, min(pw, bx+bw-1-px), min(ph, by+bh-1-py))
+	pw, ph = min(pw, bx+bw-1-px), min(ph, by+bh-1-py)
+	v.panel.SetRect(px, py, pw, ph)
 	v.panel.Draw(screen)
+	for i, k := range v.folded {
+		if row := py + 1 + i; row < py+ph-1 {
+			r := k.Rune
+			v.targets = append(v.targets, target{px + 1, row, pw - 2, func() { v.run(r) }})
+		}
+	}
 }
 
 // fold returns the leading closing keys that fit in avail columns, and whether any were
@@ -282,6 +312,37 @@ func drawChip(screen tcell.Screen, x, y int, c chip, style tcell.Style) int {
 func (v *TextBox) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return v.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		v.text.InputHandler()(event, setFocus)
+	})
+}
+
+// MouseHandler runs a chip's action, or a key panel row's, when it is clicked, as its key
+// would, and closes the panel on a click anywhere else. Other mouse events go to the text,
+// so the wheel scrolls it, and a click inside the box gives the box focus.
+func (v *TextBox) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+	return v.WrapMouseHandler(func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+		x, y := event.Position()
+		if !v.InRect(x, y) {
+			return false, nil
+		}
+		if action == tview.MouseLeftClick {
+			for _, t := range v.targets {
+				if y == t.y && x >= t.x && x < t.x+t.w {
+					setFocus(v)
+					t.act()
+					return true, nil
+				}
+			}
+			if v.open {
+				v.open = false
+				return true, nil
+			}
+		}
+		// The text would take focus from the box, whose capture handles the keys.
+		v.text.MouseHandler()(action, event, func(tview.Primitive) { setFocus(v) })
+		if action == tview.MouseLeftDown {
+			setFocus(v)
+		}
+		return true, nil
 	})
 }
 

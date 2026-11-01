@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 )
 
 var closing = []Key{
@@ -205,5 +206,57 @@ func TestPlusDoesNothingWhenEveryChipShows(t *testing.T) {
 	press(v, tcell.NewEventKey(tcell.KeyRune, '+', 0))
 	if v.open {
 		t.Error("+ opened the panel with no key folded")
+	}
+}
+
+// click clicks the box at the first cell of text on row y of s.
+func click(t *testing.T, v *TextBox, s tcell.SimulationScreen, y int, text string) {
+	t.Helper()
+	line := row(s, y)
+	i := strings.Index(line, text)
+	if i < 0 {
+		t.Fatalf("row %d lacks %q: %q", y, text, line)
+	}
+	x := len([]rune(line[:i]))
+	v.MouseHandler()(tview.MouseLeftClick, tcell.NewEventMouse(x, y, tcell.Button1, 0), func(tview.Primitive) {})
+}
+
+func TestClickingAChipRunsItsKey(t *testing.T) {
+	v, got := box(closing)
+	s := drawn(t, v, 60)
+	click(t, v, s, 11, "Request changes")
+	if string(*got) != "c" {
+		t.Errorf("onKey got %q", string(*got))
+	}
+}
+
+func TestClickingTheEscChipCancels(t *testing.T) {
+	v, _ := box(closing)
+	closed := false
+	v.close = func() { closed = true }
+	click(t, v, drawn(t, v, 60), 0, "esc")
+	if !closed {
+		t.Error("clicking esc ╳ did not cancel")
+	}
+}
+
+func TestClickingMoreOpensThePanelAndARowRunsItsKey(t *testing.T) {
+	v, got := box(closing)
+	click(t, v, drawn(t, v, 30), 11, "More")
+	if !v.open {
+		t.Fatal("clicking + More… did not open the panel")
+	}
+	click(t, v, drawn(t, v, 30), 9, "c Request changes")
+	if string(*got) != "c" || v.open {
+		t.Errorf("onKey got %q, panel open %v", string(*got), v.open)
+	}
+}
+
+func TestClickingElsewhereClosesThePanel(t *testing.T) {
+	v, got := box(closing)
+	click(t, v, drawn(t, v, 30), 11, "More")
+	click(t, v, drawn(t, v, 30), 2, "body")
+	if v.open || len(*got) != 0 {
+		t.Errorf("panel open %v, onKey got %q", v.open, string(*got))
 	}
 }
