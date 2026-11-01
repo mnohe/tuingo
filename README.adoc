@@ -16,6 +16,7 @@ What it holds, with a page and a picture for each primitive under link:docs[docs
 * link:docs/divider.adoc[`Divider`]: a one-column vertical double line, for the fixed edge between a pinned pane and the panes that scroll past it.
 * link:docs/lanerow.adoc[`LaneRow`]: a row of lanes at their own widths, one filling what the others leave, that the user reorders and scrolls sideways past the lanes the owner pins.
 * link:docs/center.adoc[`Center`]: draws a primitive centered on the screen at a size computed from the screen's.
+* link:docs/anchor.adoc[`Anchor`]: draws a primitive standing on a `Footer`, above the key that opened it; `Footer.Column` gives the column the footer draws a key at.
 * `Wrap`, `Shorten`, `PadRight`, `Truncate`, `Width`: text helpers that count columns per rune.
 * `RoundedTheme`: rounded single borders on the terminal's own background.
 

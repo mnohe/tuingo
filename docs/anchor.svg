@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540" height="162" viewBox="0 0 540 162">
+<rect width="100%" height="100%" fill="#1e1e1e"/>
+<g font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-size="15" xml:space="preserve">
+<g fill="#ffffff"><text x="99" y="67">╭</text><text x="117" y="67">F</text><text x="126" y="67">i</text><text x="135" y="67">l</text><text x="144" y="67">t</text><text x="153" y="67">e</text><text x="162" y="67">r</text><text x="180" y="67">─</text><text x="189" y="67">─</text><text x="198" y="67">─</text><text x="207" y="67">─</text><text x="216" y="67">─</text><text x="225" y="67">─</text><text x="234" y="67">╮</text></g>
+<g fill="#ffffff"><text x="99" y="85">│</text></g>
+<g fill="#ffffff"><text x="117" y="85">o</text><text x="126" y="85">n</text><text x="135" y="85">g</text><text x="144" y="85">o</text><text x="153" y="85">i</text><text x="162" y="85">n</text><text x="171" y="85">g</text></g>
+<g fill="#ffffff"><text x="234" y="85">│</text></g>
+<g fill="#ffffff"><text x="99" y="103">│</text></g>
+<g fill="#ffffff"><text x="117" y="103">p</text><text x="126" y="103">a</text><text x="135" y="103">u</text><text x="144" y="103">s</text><text x="153" y="103">e</text><text x="162" y="103">d</text></g>
+<g fill="#ffffff"><text x="234" y="103">│</text></g>
+<g fill="#ffffff"><text x="99" y="121">│</text></g>
+<g fill="#ffffff"><text x="117" y="121">d</text><text x="126" y="121">o</text><text x="135" y="121">n</text><text x="144" y="121">e</text></g>
+<g fill="#ffffff"><text x="234" y="121">│</text></g>
+<g fill="#ffffff"><text x="99" y="139">╰</text><text x="108" y="139">─</text><text x="117" y="139">─</text><text x="126" y="139">─</text><text x="135" y="139">─</text><text x="144" y="139">─</text><text x="153" y="139">─</text><text x="162" y="139">─</text><text x="171" y="139">─</text><text x="180" y="139">─</text><text x="189" y="139">─</text><text x="198" y="139">─</text><text x="207" y="139">─</text><text x="216" y="139">─</text><text x="225" y="139">─</text><text x="234" y="139">╯</text></g>
+<g fill="#ffffff" font-weight="bold"><text x="0" y="157">←</text><text x="9" y="157">↑</text><text x="18" y="157">↓</text><text x="27" y="157">→</text></g>
+<g fill="#ffffff" fill-opacity="0.55"><text x="45" y="157">m</text><text x="54" y="157">o</text><text x="63" y="157">v</text><text x="72" y="157">e</text></g>
+<g fill="#ffffff" font-weight="bold"><text x="99" y="157">f</text></g>
+<g fill="#ffffff" fill-opacity="0.55"><text x="117" y="157">f</text><text x="126" y="157">i</text><text x="135" y="157">l</text><text x="144" y="157">t</text><text x="153" y="157">e</text><text x="162" y="157">r</text></g>
+<g fill="#ffffff" font-weight="bold"><text x="189" y="157">/</text></g>
+<g fill="#ffffff" fill-opacity="0.55"><text x="207" y="157">f</text><text x="216" y="157">i</text><text x="225" y="157">n</text><text x="234" y="157">d</text></g>
+<g fill="#ffffff" font-weight="bold"><text x="261" y="157">q</text></g>
+<g fill="#ffffff" fill-opacity="0.55"><text x="279" y="157">q</text><text x="288" y="157">u</text><text x="297" y="157">i</text><text x="306" y="157">t</text></g>
+</g>
+</svg>
