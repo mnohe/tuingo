@@ -1,0 +1,37 @@
+{
+	"name": "tuingo",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	// Agent and gh configs live in named volumes so they survive a rebuild.
+	// The volumes are shared by every project that names them the same.
+	"mounts": [
+		"source=devcontainer-claude,target=/home/vscode/.claude,type=volume",
+		"source=devcontainer-codex,target=/home/vscode/.codex,type=volume",
+		"source=devcontainer-copilot,target=/home/vscode/.copilot,type=volume",
+		"source=devcontainer-gh,target=/home/vscode/.config/gh,type=volume"
+	],
+	"containerEnv": {
+		// Keeps Claude Code's ~/.claude.json inside the mounted directory.
+		"CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+		"CODEX_HOME": "/home/vscode/.codex"
+	},
+	"remoteUser": "vscode",
+	"postCreateCommand": "sudo chown -R vscode:vscode ~/.claude ~/.codex ~/.copilot ~/.config/gh && go mod download",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.go",
+				"asciidoctor.asciidoctor-vscode",
+				"anthropic.claude-code",
+				"openai.chatgpt",
+				"github.copilot",
+				"github.copilot-chat"
+			],
+			"settings": {
+				"go.lintTool": "govet",
+				"editor.formatOnSave": true
+			}
+		}
+	}
+}
