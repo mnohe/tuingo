@@ -82,7 +82,7 @@ func TestEscChipSitsTopRightWhileDismissible(t *testing.T) {
 	v, _ := box(closing)
 	closed := false
 	v.close = func() { closed = true }
-	if top := edge(row(drawn(t, v, 60), 0)); !strings.HasPrefix(top, "┌ T ─") || !strings.HasSuffix(top, "─ esc ✖ ─") {
+	if top := edge(row(drawn(t, v, 60), 0)); !strings.HasPrefix(top, "┌ T ─") || !strings.HasSuffix(top, "─ esc ╳ ─") {
 		t.Errorf("top border: %q", top)
 	}
 	press(v, tcell.NewEventKey(tcell.KeyEsc, 0, 0))
@@ -112,7 +112,7 @@ func TestEscChipGivesWayToALongTitle(t *testing.T) {
 	if top := row(drawn(t, v, 26), 0); strings.Contains(top, "esc") {
 		t.Errorf("chip drawn over the title: %q", top)
 	}
-	if top := row(drawn(t, v, 27), 0); !strings.Contains(top, "─ esc ✖ ─┐") {
+	if top := row(drawn(t, v, 27), 0); !strings.Contains(top, "─ esc ╳ ─┐") {
 		t.Errorf("chip missing with room for it: %q", top)
 	}
 }
