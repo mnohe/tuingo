@@ -164,10 +164,9 @@ func scenes() []scene {
 				v.SetBorder(true).SetTitle(" "+title+" ").SetTitleAlign(tview.AlignLeft).SetBorderPadding(0, 0, 1, 1)
 				return v
 			}
-			r := tuingo.NewLaneRow(20, "attention", "edge")
+			r := tuingo.NewLaneRow(20, "attention")
 			r.SetLanes(
 				tuingo.Lane{Key: "attention", Item: box("Needs attention", "review the\nrelease notes"), Width: 19},
-				tuingo.Lane{Key: "edge", Item: tuingo.NewDivider().SetColor(tcell.ColorGray), Width: 1},
 				tuingo.Lane{Key: "plan", Item: box("Plan", "scope the\npilot"), Width: 16},
 				tuingo.Lane{Key: "build", Item: box("Build", "draft the questions\nfor the teams"), Width: 0},
 				tuingo.Lane{Key: "done", Item: box("Done", "tag v0.1.0 and ship it"), Width: 28},
