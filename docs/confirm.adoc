@@ -2,7 +2,7 @@
 
 A yes-or-no question should answer the keys a reader reaches for without moving to the buttons. `Confirm` returns a tview modal with Yes and No buttons that also answers `y`, `n` and `esc`.
 
-image::confirm.svg[A modal asking Discard the draft? with Yes and No buttons]
+image::confirm.svg[A modal asking Discard the draft? with Yes selected on a light background and No on the dialog's own background]
 
 == How an answer arrives
 
@@ -31,4 +31,4 @@ pages.AddPage("confirm", tuingo.Confirm("Discard the draft?", func(yes bool) {
 }), true, true)
 ----
 
-The colors are tview's modal colors, so `tview.Styles` decides them.
+Only the selected button has a background of its own, in the primary text color with the inverse text color as its ink; the other sits on the dialog's background in the primary text color, so the selection is the one thing that stands out. The colors come from `tview.Styles` when `Confirm` is called.

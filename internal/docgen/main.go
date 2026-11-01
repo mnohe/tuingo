@@ -130,7 +130,10 @@ func scenes() []scene {
 			at(s, p, 0, 0, w, h)
 		}},
 		{"confirm", 48, 9, func(s tcell.Screen) {
-			at(s, tuingo.Confirm("Discard the draft?", func(bool) {}), 0, 0, 48, 9)
+			m := tuingo.Confirm("Discard the draft?", func(bool) {})
+			// Focused, as an application shows it, so the selected button stands out.
+			tview.NewApplication().SetFocus(m)
+			at(s, m, 0, 0, 48, 9)
 		}},
 		{"tabs", 60, 1, func(s tcell.Screen) {
 			t := tuingo.NewTabs()
