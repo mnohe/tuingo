@@ -1,0 +1,23 @@
+= The Tuingo primitives
+
+* link:cardpane.adoc[`CardPane`]: a scrolling board of cards, trees and lanes with directional navigation.
+* link:textbox.adoc[`TextBox`]: a scrolling text dialog with key legends and closing-action chips.
+* link:table.adoc[`Table`]: a table with wrapping columns inside a text dialog.
+* link:host.adoc[`Host`]: manages modal dialogs and restores focus when they close.
+* link:confirm.adoc[`Confirm`]: a yes-or-no dialog with button and keyboard answers.
+* link:notice.adoc[`Notice`]: a one-line message that clears itself after a delay.
+* link:tabs.adoc[`Tabs`]: a row of view labels with an active tab and a right-aligned stamp.
+* link:footer.adoc[`Footer`]: a one-line key legend.
+* link:keypanel.adoc[`KeyPanel`]: a bordered column of keys and labels.
+* link:divider.adoc[`Divider`]: a vertical double line separating panes.
+* link:lanerow.adoc[`LaneRow`]: a row of reorderable lanes with pinned lanes and horizontal scrolling.
+* link:choice.adoc[`Choice`]: a dialog for choosing one option from a list.
+* link:checklist.adoc[`Checklist`]: a dialog for toggling multiple options.
+* link:anchor.adoc[`Anchor`]: positions a primitive above the footer key that opened it.
+* link:center.adoc[`Center`]: keeps a primitive centered and sized to the screen.
+
+== Other helpers
+
+* `Watch`: a debounced, recursive file watcher that skips `.git`.
+* `Wrap`, `Shorten`, `PadRight`, `Truncate`, `Width`: text wrapping, sizing and alignment helpers.
+* `RoundedTheme`: rounded borders on the terminal's own background.
