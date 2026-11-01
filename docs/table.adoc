@@ -1,0 +1,20 @@
+= Table
+
+`Table` is a text block for logs and history inside a `TextBox`. Short columns
+use their widest printed cell; style tags take no space and wide characters
+count as terminal columns. The last column wraps under itself.
+
+[source,go]
+----
+box.ShowBlocks("History", []tuingo.Block{
+    tuingo.Lines{"Recent changes", ""},
+    tuingo.Table{Rows: [][]string{
+        {"08:21", "ongoing", "Started"},
+        {"08:26", "paused", "Waiting for the owning teams to answer"},
+    }},
+}, nil, "")
+----
+
+The box renders blocks at its current inner width on each draw, so a resize
+rewraps the table. `Show` still accepts plain lines. Missing cells are empty;
+on screens too narrow for the short columns, rows wrap as ordinary text.
