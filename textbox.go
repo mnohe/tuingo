@@ -35,15 +35,17 @@ const more = "+ More…"
 // reported, folded or not.
 type TextBox struct {
 	*tview.Box
-	text    *tview.TextView
-	hints   *tview.TextView
-	panel   *KeyPanel
-	keys    map[rune]bool
-	closing []Key
-	folded  []Key
-	open    bool
-	onKey   func(r rune)
-	close   func()
+	text     *tview.TextView
+	hints    *tview.TextView
+	panel    *KeyPanel
+	keys     map[rune]bool
+	closing  []Key
+	folded   []Key
+	open     bool
+	onKey    func(r rune)
+	close    func()
+	blocks   []Block
+	rendered string
 }
 
 // NewTextBox returns an empty box; onKey receives an offered key, close runs on esc or q.
@@ -80,6 +82,7 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 // the legend with a faint note after them when given, and the keys that close it on the
 // bottom border, the first the last to fold.
 func (v *TextBox) Show(title string, lines []string, keys []Key, note string) {
+	v.blocks = nil
 	v.SetTitle(" " + title + " ")
 	v.text.SetText(strings.Join(lines, "\n")).ScrollToBeginning()
 	v.keys = map[rune]bool{}
@@ -118,7 +121,20 @@ func (v *TextBox) Size(sw, sh int) (int, int) {
 func (v *TextBox) Draw(screen tcell.Screen) {
 	v.DrawForSubclass(screen, v)
 	x, y, w, h := v.GetInnerRect()
-	v.text.SetRect(x, y, w, h-2)
+	if v.blocks != nil {
+		var lines []string
+		for _, block := range v.blocks {
+			if block != nil {
+				lines = append(lines, block.Render(w)...)
+			}
+		}
+		text := strings.Join(lines, "\n")
+		if text != v.rendered {
+			v.text.SetText(text)
+			v.rendered = text
+		}
+	}
+	v.text.SetRect(x, y, w, max(0, h-2))
 	v.text.Draw(screen)
 	v.hints.SetRect(x, y+h-2, w, 2)
 	v.hints.Draw(screen)
@@ -217,4 +233,12 @@ func (v *TextBox) InputHandler() func(event *tcell.EventKey, setFocus func(p tvi
 	return v.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		v.text.InputHandler()(event, setFocus)
 	})
+}
+
+// ShowBlocks fills the box with content rendered at the inner width on every draw.
+// Plain lines and tables can be mixed; Show remains available for finished lines.
+func (v *TextBox) ShowBlocks(title string, blocks []Block, keys []Key, note string) {
+	v.Show(title, nil, keys, note)
+	v.blocks = append([]Block{}, blocks...)
+	v.rendered = ""
 }
