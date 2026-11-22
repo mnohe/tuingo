@@ -15,11 +15,17 @@ type Node struct {
 // Gap to the right joined by an arrow, children stacked with a blank row between. make
 // gives the card for an id. It returns the rows used.
 func (p *CardPane) DrawTree(n *Node, x, y, w int, make func(id string) Card, arrow tcell.Style) int {
+	return p.DrawTreeWithTitles(n, x, y, w, withCardLabel(make), arrow)
+}
+
+// DrawTreeWithTitles draws a tree whose cards receive separate titles.
+func (p *CardPane) DrawTreeWithTitles(n *Node, x, y, w int, make func(id string) (Card, CardTitle), arrow tcell.Style) int {
 	return p.drawTree(n, x, y, w, make, arrow, "")
 }
 
-func (p *CardPane) drawTree(n *Node, x, y, w int, make func(id string) Card, arrow tcell.Style, parent string) int {
-	p.DrawCard(n.ID, x, y, w, make(n.ID), parent)
+func (p *CardPane) drawTree(n *Node, x, y, w int, make func(id string) (Card, CardTitle), arrow tcell.Style, parent string) int {
+	card, title := make(n.ID)
+	p.DrawCardWithTitle(n.ID, x, y, w, card, title, parent)
 	if len(n.Children) == 0 {
 		return CardHeight
 	}
@@ -57,11 +63,24 @@ func (p *CardPane) drawTree(n *Node, x, y, w int, make func(id string) Card, arr
 // DrawLane draws cards in a column from (x, y), a blank row between, and returns the rows
 // used.
 func (p *CardPane) DrawLane(ids []string, x, y, w int, make func(id string) Card) int {
+	return p.DrawLaneWithTitles(ids, x, y, w, withCardLabel(make))
+}
+
+// DrawLaneWithTitles draws a column whose cards receive separate titles.
+func (p *CardPane) DrawLaneWithTitles(ids []string, x, y, w int, make func(id string) (Card, CardTitle)) int {
 	for i, id := range ids {
-		p.DrawCard(id, x, y+i*(CardHeight+1), w, make(id), "")
+		card, title := make(id)
+		p.DrawCardWithTitle(id, x, y+i*(CardHeight+1), w, card, title, "")
 	}
 	if len(ids) == 0 {
 		return 0
 	}
 	return len(ids)*(CardHeight+1) - 1
+}
+
+func withCardLabel(make func(string) Card) func(string) (Card, CardTitle) {
+	return func(id string) (Card, CardTitle) {
+		card := make(id)
+		return card, CardTitle{Label: card.Label}
+	}
 }

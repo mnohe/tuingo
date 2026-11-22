@@ -1,10 +1,13 @@
 = The Tuingo primitives
 
 * link:cardpane.adoc[`CardPane`]: a scrolling board of cards, trees and lanes with directional navigation.
+* link:cardtitle.adoc[`CardTitle`]: a card label with a leading marker and trailing marks.
 * link:textbox.adoc[`TextBox`]: a scrolling text dialog with key legends and closing-action chips.
 * link:table.adoc[`Table`]: a table with wrapping columns inside a text dialog.
 * link:host.adoc[`Host`]: manages modal dialogs and restores focus when they close.
-* link:confirm.adoc[`Confirm`]: a yes-or-no dialog with button and keyboard answers.
+* link:confirm.adoc[`Confirm`]: a yes-or-no dialog with answer chips on the border.
+* link:prompt.adoc[`Prompt`]: a modal question with a single-line answer.
+* link:progress.adoc[`Progress`]: a modal display of running and finished steps.
 * link:notice.adoc[`Notice`]: a one-line message that clears itself after a delay.
 * link:tabs.adoc[`Tabs`]: a row of view labels with an active tab and a right-aligned stamp.
 * link:footer.adoc[`Footer`]: a one-line key legend.

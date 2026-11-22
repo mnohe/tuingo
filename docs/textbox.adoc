@@ -57,3 +57,20 @@ Folded keys stay live: pressing `c` runs it whether its chip shows or not, and c
 
 * When even `pass:c[+ More…]` does not fit, the border shows no chips, and `pass:c[+]` still opens the panel.
 * When the caller offers `pass:c[+]` as a key, the caller's key wins, so the panel cannot open, because the box checks offered keys first.
+
+== Opening a key's submenu
+
+Register a submenu for an offered key with `SetSubmenu`. Press the parent key or click its legend entry or chip to open a panel above it. The panel handles its own keys and Escape while open. A click anywhere outside its choices dismisses it. `SetSubkeyFunc` receives both runes when the reader picks an entry.
+
+image::textbox-submenu.svg[The Change state legend entry opens a panel with Ready, Planning and Cancelled]
+
+[source,go]
+----
+box.SetSubmenu('s', []tuingo.Key{
+	{Rune: 'r', Label: "Ready"},
+	{Rune: 'p', Label: "Planning"},
+	{Rune: 'c', Label: "Cancelled"},
+}).SetSubkeyFunc(onSubkey)
+----
+
+The registration survives `Show` and applies when `Show` offers the parent key. Pass an empty slice to remove the submenu.

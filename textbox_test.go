@@ -260,3 +260,27 @@ func TestClickingElsewhereClosesThePanel(t *testing.T) {
 		t.Errorf("panel open %v, onKey got %q", v.open, string(*got))
 	}
 }
+
+func TestSubmenuOwnsKeysAndMouseWhileOpen(t *testing.T) {
+	v, top := box([]Key{{Rune: 's', Label: "Change state"}, {Rune: 'r', Label: "Review"}})
+	var picks string
+	v.SetSubmenu('s', []Key{{Rune: 'r', Label: "Ready"}, {Rune: 'q', Label: "Queued"}}).
+		SetSubkeyFunc(func(parent, child rune) { picks += string([]rune{parent, child}) })
+	click(t, v, drawn(t, v, 48), 9, "s Change state")
+	press(v, r('x'))
+	press(v, r('r'))
+	if picks != "sr" || len(*top) != 0 {
+		t.Fatalf("submenu picks %q, top-level keys %q", picks, string(*top))
+	}
+	press(v, r('s'))
+	click(t, v, drawn(t, v, 48), 7, "q Queued")
+	if picks != "srsq" {
+		t.Fatalf("mouse selection: %q", picks)
+	}
+	press(v, r('s'))
+	press(v, esc())
+	press(v, r('r'))
+	if string(*top) != "r" {
+		t.Fatalf("top-level key after Escape: %q", string(*top))
+	}
+}

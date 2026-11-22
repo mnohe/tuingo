@@ -64,14 +64,40 @@ func TestConfirmAnswersYesAfterFocusLeftForALane(t *testing.T) {
 	}
 }
 
-func TestConfirmButtonsWorkAfterFocusLeft(t *testing.T) {
+func TestConfirmEnterLeavesTheQuestionOpen(t *testing.T) {
 	app, h, lane, _, _ := screen(t)
 	var answers []bool
 	h.Confirm("Accept?", func(yes bool) { answers = append(answers, yes) })
 	app.SetFocus(lane)
 	key(app, h, tcell.NewEventKey(tcell.KeyEnter, 0, 0))
-	if len(answers) != 1 || !answers[0] {
-		t.Fatalf("enter on the Yes button: answers %v", answers)
+	if len(answers) != 0 || !h.HasPage(confirmPage) {
+		t.Fatalf("enter answered the question: answers %v", answers)
+	}
+}
+
+func TestPromptKeepsTypingAfterFocusMovesAndTrimsTheAnswer(t *testing.T) {
+	app, h, lane, details, _ := screen(t)
+	var answer string
+	var submitted bool
+	h.Prompt("Why?", func(text string, ok bool) { answer, submitted = text, ok })
+	app.SetFocus(lane)
+	key(app, h, r(' '))
+	key(app, h, tcell.NewEventKey(tcell.KeyEnter, 0, 0))
+	if !h.HasPage(promptPage) {
+		t.Fatal("blank answer closed the prompt")
+	}
+	for _, ch := range "  ready  " {
+		key(app, h, r(ch))
+	}
+	key(app, h, tcell.NewEventKey(tcell.KeyEnter, 0, 0))
+	if !submitted || answer != "ready" || app.GetFocus() != details {
+		t.Fatalf("answer %q, submitted %v, focus %T", answer, submitted, app.GetFocus())
+	}
+	h.Prompt("Why?", func(text string, ok bool) { answer, submitted = text, ok })
+	key(app, h, r('x'))
+	key(app, h, esc())
+	if submitted || answer != "" {
+		t.Fatalf("cancel reported %q, %v", answer, submitted)
 	}
 }
 

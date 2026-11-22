@@ -13,6 +13,8 @@ const rootPage = "tuingo.root"
 // confirmPage is the page a Host opens a Confirm on.
 const confirmPage = "tuingo.confirm"
 
+const promptPage = "tuingo.prompt"
+
 // Host sits at an application's root, wrapping its screen, and owns the dialogs the
 // application opens, so a dialog stays modal whatever the application does with focus.
 // While a dialog is open the host hands every key and mouse event to the topmost dialog,
@@ -44,12 +46,21 @@ func NewHost(app *tview.Application, root tview.Primitive) *Host {
 // restore. p draws itself where it likes; Center and Anchor place it.
 func (h *Host) Open(name string, p tview.Primitive) {
 	prev := h.app.GetFocus()
+	for i := len(h.open) - 1; i >= 0; i-- {
+		if item := h.open[i].item; item.HasFocus() {
+			prev = item
+			break
+		}
+	}
 	if i := h.index(name); i >= 0 {
 		prev = h.forget(i).prev
 	}
 	h.open = append(h.open, hosted{name: name, item: p, prev: prev})
 	h.AddPage(name, p, true, true)
 	h.app.SetFocus(p)
+	if progress := hostedProgress(p); progress != nil {
+		progress.setApplication(h.app)
+	}
 }
 
 // Close removes the dialog open under name. When it was the topmost, focus goes back to
@@ -75,6 +86,9 @@ func (h *Host) Close(name string) {
 // restores focus to where it would have instead.
 func (h *Host) forget(i int) hosted {
 	d := h.open[i]
+	if progress := hostedProgress(d.item); progress != nil {
+		progress.setApplication(nil)
+	}
 	h.open = slices.Delete(h.open, i, i+1)
 	for j := range h.open {
 		if h.open[j].prev == d.item {
@@ -84,6 +98,19 @@ func (h *Host) forget(i int) hosted {
 	return d
 }
 
+func hostedProgress(p tview.Primitive) *Progress {
+	for {
+		switch item := p.(type) {
+		case *Centered:
+			p = item.Primitive
+		case *Progress:
+			return item
+		default:
+			return nil
+		}
+	}
+}
+
 // Confirm opens a Confirm asking text through the host, so no focus change skips it. The
 // host closes it before calling done with the answer.
 func (h *Host) Confirm(text string, done func(yes bool)) {
@@ -91,6 +118,15 @@ func (h *Host) Confirm(text string, done func(yes bool)) {
 		h.Close(confirmPage)
 		done(yes)
 	}))
+}
+
+// Prompt opens a modal line prompt and closes it before reporting its answer.
+func (h *Host) Prompt(text string, done func(answer string, ok bool)) {
+	p := Prompt(text, func(answer string, ok bool) {
+		h.Close(promptPage)
+		done(answer, ok)
+	})
+	h.Open(promptPage, Center(p, p.Size))
 }
 
 // Modal reports whether a dialog is open.
@@ -144,6 +180,22 @@ func (h *Host) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 		}
 		if handler := d.item.InputHandler(); handler != nil {
 			handler(event, setFocus)
+		}
+	})
+}
+
+// PasteHandler gives pasted text to the topmost dialog while one is open.
+func (h *Host) PasteHandler() func(string, func(tview.Primitive)) {
+	d, ok := h.top()
+	if !ok {
+		return h.Pages.PasteHandler()
+	}
+	return h.WrapPasteHandler(func(text string, setFocus func(tview.Primitive)) {
+		if !d.item.HasFocus() {
+			setFocus(d.item)
+		}
+		if handler := d.item.PasteHandler(); handler != nil {
+			handler(text, setFocus)
 		}
 	})
 }
