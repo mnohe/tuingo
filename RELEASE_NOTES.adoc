@@ -1,14 +1,22 @@
-= tuingo 1.0.0
+= tuingo 1.1.0
+
+* `Confirm` shows Yes and No as answer chips. Enter leaves the question open. Use `y`, `n`, Escape, or click a chip.
+* `TextBox` supports per-key submenus with separate parent and child runes.
+* `Prompt` and `Host.Prompt` collect a single line of text.
+* `Progress` shows running and finished operation steps in a modal.
+* `CardTitle` adds a lead and whole trailing marks to title rows in cards, trees, and lanes.
+
+== tuingo 1.0.0
 
 Release notes prepared for the first stable release.
 
-== Stable API
+=== Stable API
 
 The public API covers card panes, cards, trees and lanes; text dialogs with action chips; confirmations, tabs, notices, key legends, dividers and centered overlays; text and color helpers; and a debounced directory watcher.
 
 From 1.0.0, incompatible public API changes require a new major version. Patch releases fix bugs, and minor releases may add compatible functionality. The module path remains `github.com/mnohe/tuingo`.
 
-== Release highlights
+=== Release highlights
 
 * Text helpers, card planes and dialog chips use terminal display widths. Truncation keeps grapheme clusters whole, including combining marks, wide characters and emoji sequences. A wide character clipped by a viewport edge is omitted rather than drawn partially.
 * `Shorten` preserves text that exactly fits. Non-positive text widths return empty text; `Wrap` keeps an oversized word intact on its own line. These helpers accept plain text, without tview color markup or terminal escape sequences.
@@ -16,7 +24,7 @@ From 1.0.0, incompatible public API changes require a new major version. Patch r
 * A runnable board example demonstrates navigation, selection highlighting, Unicode text and quitting: `go run ./examples`.
 * CI and tagged releases run the race detector as well as ordinary tests, formatting and vet checks.
 
-== Requirements and usage
+=== Requirements and usage
 
 Go 1.27.1 or later is required. Terminal rendering follows tcell and uniseg width conventions; the terminal and font must support the characters being displayed.
 

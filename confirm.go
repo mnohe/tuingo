@@ -5,24 +5,37 @@ import (
 	"github.com/rivo/tview"
 )
 
-// Confirm asks a yes-or-no question with buttons, answering the y, n and esc keys too. Only
-// the selected button has a background of its own; the other sits on the dialog's, so the
-// selection is the one thing that stands out.
+// Confirm asks a yes-or-no question with answer chips on its bottom border.
+// The y key answers Yes, n and Escape answer No, and Enter leaves it open.
 func Confirm(text string, done func(yes bool)) *tview.Modal {
-	m := tview.NewModal().SetText(text).AddButtons([]string{"Yes", "No"}).
-		SetDoneFunc(func(i int, _ string) { done(i == 0) }).
-		SetButtonStyle(tcell.StyleDefault.
-			Background(tview.Styles.ContrastBackgroundColor).
-			Foreground(tview.Styles.PrimaryTextColor)).
-		SetButtonActivatedStyle(tcell.StyleDefault.
-			Background(tview.Styles.PrimaryTextColor).
-			Foreground(tview.Styles.InverseTextColor))
+	m := tview.NewModal().SetText(text).SetDoneFunc(func(i int, _ string) { done(i == 0) })
+	var targets []target
+	m.SetDrawFunc(func(screen tcell.Screen, x, y, w, h int) (int, int, int, int) {
+		chips := []chip{{"y", "Yes"}, {"n", "No"}}
+		if rowWidth(chips) > w-3 {
+			chips = []chip{{key: "y"}, {key: "n"}}
+		}
+		targets = drawChipRow(screen, x+w-3, y+h-1, w-3, chips, borderChipStyle(m.GetBorderColor()), targets[:0], func(i int) func() {
+			return func() { done(i == 0) }
+		})
+		return x + 1, y + 1, w - 2, h - 2
+	})
+	m.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		if action == tview.MouseLeftClick {
+			if hit, ok := targetAt(targets, event); ok {
+				hit()
+				return action, nil
+			}
+		}
+		return action, event
+	})
 	m.SetInputCapture(func(ev *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case ev.Rune() == 'y':
 			done(true)
 		case ev.Rune() == 'n', ev.Key() == tcell.KeyEsc:
 			done(false)
+		case ev.Key() == tcell.KeyEnter:
 		default:
 			return ev
 		}

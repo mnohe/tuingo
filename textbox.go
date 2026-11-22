@@ -30,7 +30,12 @@ type Key struct {
 type chip struct{ key, label string }
 
 // text is the chip's label as drawn, without its padding.
-func (c chip) text() string { return c.key + " " + c.label }
+func (c chip) text() string {
+	if c.label == "" {
+		return c.key
+	}
+	return c.key + " " + c.label
+}
 
 // moreChip stands in for the closing keys folded off the border, and escChip, on the top
 // border, cancels the box.
@@ -47,23 +52,28 @@ var (
 // chip at the top right of its border says so.
 type TextBox struct {
 	*tview.Box
-	text     *tview.TextView
-	hints    *tview.TextView
-	panel    *KeyPanel
-	keys     map[rune]bool
-	closing  []Key
-	folded   []Key
-	open     bool
-	onKey    func(r rune)
-	close    func()
-	stuck    bool
-	blocks   []Block
-	rendered string
-	targets  []target
+	text         *tview.TextView
+	hints        *tview.TextView
+	panel        *KeyPanel
+	keys         map[rune]bool
+	closing      []Key
+	folded       []Key
+	open         bool
+	onKey        func(r rune)
+	close        func()
+	stuck        bool
+	blocks       []Block
+	rendered     string
+	targets      []target
+	legend       []Key
+	submenus     map[rune][]Key
+	onSubkey     func(parent, child rune)
+	submenu      []Key
+	parent       rune
+	panelTargets []target
 }
 
-// target is a place on screen a click runs an action from: a chip, or a row of the key
-// panel.
+// target is a clickable chip, legend entry, or panel row.
 type target struct {
 	x, y, w int
 	act     func()
@@ -80,9 +90,21 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 		onKey: onKey,
 		close: close,
 	}
+	v.panel.SetWrap(false)
 	v.SetBorder(true).SetTitleAlign(tview.AlignLeft).SetBorderPadding(1, 1, 2, 2)
 	v.SetInputCapture(func(ev *tcell.EventKey) *tcell.EventKey {
 		switch {
+		case len(v.submenu) != 0:
+			if ev.Key() == tcell.KeyEsc {
+				v.submenu = nil
+			} else if ev.Key() == tcell.KeyRune {
+				for _, k := range v.submenu {
+					if k.Rune == ev.Rune() {
+						v.pickSubkey(k.Rune)
+						break
+					}
+				}
+			}
 		case v.open && (ev.Key() == tcell.KeyEsc || ev.Rune() == 'q'):
 			v.open = false
 		case !v.stuck && (ev.Key() == tcell.KeyEsc || ev.Rune() == 'q'):
@@ -99,10 +121,45 @@ func NewTextBox(onKey func(r rune), close func()) *TextBox {
 	return v
 }
 
-// run closes the panel and reports an offered key.
+// run closes the folded panel and opens the offered key's submenu or reports the key.
 func (v *TextBox) run(r rune) {
 	v.open = false
+	if keys := v.submenus[r]; len(keys) != 0 {
+		v.parent, v.submenu = r, keys
+		v.panelTargets = v.panelTargets[:0]
+		return
+	}
 	v.onKey(r)
+}
+
+// SetSubmenu registers the keys opened by an offered key. An empty slice removes it.
+// Registrations survive Show and only apply while their parent key is offered.
+func (v *TextBox) SetSubmenu(parent rune, keys []Key) *TextBox {
+	if len(keys) == 0 {
+		delete(v.submenus, parent)
+	} else {
+		if v.submenus == nil {
+			v.submenus = make(map[rune][]Key)
+		}
+		v.submenus[parent] = append([]Key(nil), keys...)
+	}
+	if v.parent == parent {
+		v.submenu = nil
+	}
+	return v
+}
+
+// SetSubkeyFunc sets the callback for a submenu selection.
+func (v *TextBox) SetSubkeyFunc(fn func(parent, child rune)) *TextBox {
+	v.onSubkey = fn
+	return v
+}
+
+func (v *TextBox) pickSubkey(child rune) {
+	v.submenu = nil
+	if v.onSubkey != nil {
+		v.onSubkey(v.parent, child)
+	}
 }
 
 // SetDismissible sets whether esc and q cancel the box by calling close, shown by an
@@ -123,6 +180,7 @@ func (v *TextBox) Show(title string, lines []string, keys []Key, note string) {
 	v.text.SetText(strings.Join(lines, "\n")).ScrollToBeginning()
 	v.keys = map[rune]bool{}
 	v.closing, v.folded, v.open = nil, nil, false
+	v.legend, v.submenu = nil, nil
 	var pairs []string
 	for _, k := range keys {
 		v.keys[k.Rune] = true
@@ -131,6 +189,7 @@ func (v *TextBox) Show(title string, lines []string, keys []Key, note string) {
 			continue
 		}
 		pairs = append(pairs, string(k.Rune), k.Label)
+		v.legend = append(v.legend, k)
 	}
 	hints := Legend(pairs...)
 	if note != "" {
@@ -158,6 +217,7 @@ func (v *TextBox) Size(sw, sh int) (int, int) {
 func (v *TextBox) Draw(screen tcell.Screen) {
 	v.DrawForSubclass(screen, v)
 	v.targets = v.targets[:0]
+	v.panelTargets = v.panelTargets[:0]
 	x, y, w, h := v.GetInnerRect()
 	if v.blocks != nil {
 		var lines []string
@@ -177,13 +237,33 @@ func (v *TextBox) Draw(screen tcell.Screen) {
 	v.hints.SetRect(x, y+h-2, w, 2)
 	v.hints.Draw(screen)
 	v.drawEsc(screen)
-	v.drawChips(screen)
+	edge, anchorY := v.drawChips(screen)
+	if legendEdge, ok := v.legendTargets(x, y+h-1, w); ok {
+		edge, anchorY = legendEdge, y+h-1
+	}
+	if len(v.submenu) != 0 {
+		v.drawPanel(screen, edge, anchorY, v.submenu, v.pickSubkey, &v.panelTargets)
+	}
 }
 
-// chipStyle is a chip's look: reversed, it fills with the border color and its ink is the
-// screen's background, whatever the terminal's theme.
-func (v *TextBox) chipStyle() tcell.Style {
-	return tcell.StyleDefault.Foreground(v.GetBorderColor()).Reverse(true)
+func (v *TextBox) legendTargets(x, y, w int) (edge int, found bool) {
+	// A wrapped legend may only show part of its first line.
+	if tview.TaggedStringWidth(strings.TrimPrefix(v.hints.GetText(false), "\n")) > w {
+		return 0, false
+	}
+	end := x + w
+	for i := len(v.legend) - 1; i >= 0; i-- {
+		k := v.legend[i]
+		start := end - columns(string(k.Rune)) - 1 - columns(k.Label)
+		if len(v.submenus[k.Rune]) != 0 {
+			v.targets = append(v.targets, target{start, y, end - start, func() { v.run(k.Rune) }})
+		}
+		if len(v.submenu) != 0 && v.parent == k.Rune {
+			edge, found = end-1, true
+		}
+		end = start - legendGap
+	}
+	return edge, found
 }
 
 // drawEsc draws the "esc ✕" chip right-aligned on the top border, followed by a ─, when
@@ -198,7 +278,7 @@ func (v *TextBox) drawEsc(screen tcell.Screen) {
 		return
 	}
 	x := bx + bw - 1 - row
-	drawChip(screen, x, by, escChip, v.chipStyle())
+	drawChip(screen, x, by, escChip, borderChipStyle(v.GetBorderColor()))
 	v.targets = append(v.targets, target{x, by, row - 1, v.close})
 }
 
@@ -206,11 +286,13 @@ func (v *TextBox) drawEsc(screen tcell.Screen) {
 // ─, folding from the right into a "+ More…" chip until the row fits, and the key panel
 // listing the folded keys, its bottom on the row above the border and its right edge on
 // the chip's.
-func (v *TextBox) drawChips(screen tcell.Screen) {
-	if len(v.closing) == 0 {
-		return
-	}
+func (v *TextBox) drawChips(screen tcell.Screen) (edge, anchorY int) {
 	bx, by, bw, bh := v.GetRect()
+	right, anchorY := bx+bw-2, by+bh-1
+	edge = right - 1
+	if len(v.closing) == 0 {
+		return edge, anchorY
+	}
 	avail := bw - 4
 	shown, folded := fold(v.closing, avail)
 	v.folded = v.closing[len(shown):]
@@ -221,46 +303,77 @@ func (v *TextBox) drawChips(screen tcell.Screen) {
 	if folded {
 		chips = append(chips, moreChip)
 	}
-	right := bx + bw - 2
-	style := v.chipStyle()
-	// The panel's right edge sits on the "+ More…" chip's, or on the border's when no chip
-	// fits.
-	edge := right - 1
-	if row := rowWidth(chips); row <= avail {
-		cx := right - row + 1
-		for i, c := range chips {
-			act := func() { v.open = !v.open }
+	first := len(v.targets)
+	v.targets = drawChipRow(screen, right, anchorY, avail, chips, borderChipStyle(v.GetBorderColor()), v.targets, func(i int) func() {
+		if i == len(shown) {
+			return func() { v.open = !v.open }
+		}
+		return func() { v.run(shown[i].Rune) }
+	})
+	for i, t := range v.targets[first:] {
+		if i == len(shown) || (len(v.submenu) != 0 && shown[i].Rune == v.parent) {
+			edge = t.x + t.w - 1
 			if i < len(shown) {
-				r := shown[i].Rune
-				act = func() { v.run(r) }
-			}
-			start := cx
-			cx = drawChip(screen, cx, by+bh-1, c, style) + 1
-			v.targets = append(v.targets, target{start, by + bh - 1, cx - 1 - start, act})
-			if c == moreChip {
-				edge = cx - 2
+				break
 			}
 		}
 	}
-	if !folded || !v.open {
-		return
+	if folded && v.open {
+		v.drawPanel(screen, edge, anchorY, v.folded, v.run, &v.targets)
 	}
+	return edge, anchorY
+}
+
+func (v *TextBox) drawPanel(screen tcell.Screen, edge, anchorY int, keys []Key, run func(rune), targets *[]target) {
+	bx, by, bw, _ := v.GetRect()
 	var pairs []string
-	for _, k := range v.folded {
+	for _, k := range keys {
 		pairs = append(pairs, string(k.Rune), k.Label)
 	}
 	v.panel.Set(pairs...)
 	pw, ph := v.panel.Size()
-	px, py := max(edge-pw+1, bx+1), max(by+bh-1-ph, by+1)
-	pw, ph = min(pw, bx+bw-1-px), min(ph, by+bh-1-py)
+	pw, ph = min(pw, bw-2), min(ph, anchorY-by-1)
+	if pw < 4 || ph < 3 {
+		return
+	}
+	px, py := max(edge-pw+1, bx+1), anchorY-ph
 	v.panel.SetRect(px, py, pw, ph)
 	v.panel.Draw(screen)
-	for i, k := range v.folded {
+	for i, k := range keys {
 		if row := py + 1 + i; row < py+ph-1 {
 			r := k.Rune
-			v.targets = append(v.targets, target{px + 1, row, pw - 2, func() { v.run(r) }})
+			*targets = append(*targets, target{px + 1, row, pw - 2, func() { run(r) }})
 		}
 	}
+}
+
+// borderChipStyle fills a chip with the border color and draws ink in the terminal background.
+func borderChipStyle(color tcell.Color) tcell.Style {
+	return tcell.StyleDefault.Foreground(color).Reverse(true)
+}
+
+func drawChipRow(screen tcell.Screen, right, y, available int, chips []chip, style tcell.Style, targets []target, action func(int) func()) []target {
+	width := rowWidth(chips)
+	if width > available {
+		return targets
+	}
+	x := right - width + 1
+	for i, c := range chips {
+		next := drawChip(screen, x, y, c, style)
+		targets = append(targets, target{x, y, next - x, action(i)})
+		x = next + 1
+	}
+	return targets
+}
+
+func targetAt(targets []target, event *tcell.EventMouse) (func(), bool) {
+	x, y := event.Position()
+	for _, t := range targets {
+		if y == t.y && x >= t.x && x < t.x+t.w {
+			return t.act, true
+		}
+	}
+	return nil, false
 }
 
 // fold returns the leading closing keys that fit in avail columns, and whether any were
@@ -328,6 +441,16 @@ func (v *TextBox) InputHandler() func(event *tcell.EventKey, setFocus func(p tvi
 func (v *TextBox) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
 	return v.WrapMouseHandler(func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
 		x, y := event.Position()
+		if len(v.submenu) != 0 {
+			if action == tview.MouseLeftClick {
+				if hit, ok := targetAt(v.panelTargets, event); ok {
+					hit()
+				} else {
+					v.submenu = nil
+				}
+			}
+			return true, nil
+		}
 		if !v.InRect(x, y) {
 			return false, nil
 		}

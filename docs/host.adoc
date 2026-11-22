@@ -31,4 +31,6 @@ host.Confirm("Accept the task?", func(yes bool) {
 })
 ----
 
+`Prompt(text, done)` opens a centered link:prompt.adoc[line prompt] with the same focus and close behavior. For progress, open a link:progress.adoc[`Progress`] dialog using `Center`. The host redraws its indeterminate bars as they animate.
+
 `Modal` reports whether a dialog is open, for an application that wants to leave focus alone while one is.

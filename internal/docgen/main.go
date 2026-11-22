@@ -108,6 +108,14 @@ func scenes() []scene {
 			p.Select("plan")
 			at(s, p, 0, 0, 64, 12)
 		}},
+		{"cardtitle", 38, 5, func(s tcell.Screen) {
+			p := tuingo.NewCardPane("board")
+			title, body := tuingo.CardStyles("#3b82f6", "#ffffff", "#e5e7eb", true)
+			p.DrawCardWithTitle("PROJ-9", 0, 0, 36, tuingo.Card{
+				Text: "Review the release notes", Title: title, Body: body, Glyph: "●",
+			}, tuingo.CardTitle{Lead: "◆", Label: "PROJ-9", Marks: []string{"#41", "+2"}}, "")
+			at(s, p, 0, 0, 38, 5)
+		}},
 		{"table", 72, 12, func(s tcell.Screen) {
 			b := tuingo.NewTextBox(func(rune) {}, func() {})
 			b.ShowBlocks("History", []tuingo.Block{
@@ -123,6 +131,17 @@ func scenes() []scene {
 		{"textbox", 72, 12, textBox(72, false)},
 		{"textbox-folded", 40, 12, textBox(40, false)},
 		{"textbox-panel", 40, 12, textBox(40, true)},
+		{"textbox-submenu", 56, 12, func(s tcell.Screen) {
+			b := tuingo.NewTextBox(func(rune) {}, func() {})
+			b.Show("Task", text, []tuingo.Key{
+				{Rune: 's', Label: "Change state"}, {Rune: 'r', Label: "Review"},
+			}, "")
+			b.SetSubmenu('s', []tuingo.Key{
+				{Rune: 'r', Label: "Ready"}, {Rune: 'p', Label: "Planning"}, {Rune: 'c', Label: "Cancelled"},
+			})
+			b.GetInputCapture()(tcell.NewEventKey(tcell.KeyRune, 's', 0))
+			at(s, b, 0, 0, 56, 12)
+		}},
 		{"keypanel", 24, 5, func(s tcell.Screen) {
 			p := tuingo.NewKeyPanel()
 			p.Set("c", "Request changes", "a", "Answer", "r", "Reassign")
@@ -131,9 +150,24 @@ func scenes() []scene {
 		}},
 		{"confirm", 48, 9, func(s tcell.Screen) {
 			m := tuingo.Confirm("Discard the draft?", func(bool) {})
-			// Focused, as an application shows it, so the selected button stands out.
 			tview.NewApplication().SetFocus(m)
 			at(s, m, 0, 0, 48, 9)
+		}},
+		{"prompt", 36, 7, func(s tcell.Screen) {
+			p := tuingo.Prompt("Why cancel the task?", func(string, bool) {})
+			app := tview.NewApplication()
+			app.SetFocus(p)
+			p.PasteHandler()("Superseded by PROJ-9", func(item tview.Primitive) { app.SetFocus(item) })
+			tuingo.Center(p, p.Size).Draw(s)
+		}},
+		{"progress", 44, 7, func(s tcell.Screen) {
+			p := tuingo.NewProgress(nil).SetTitle("Change state TCTL-12")
+			p.Start("Checking the move", 0).Finish()
+			p.Start("Checking the records", 0).Finish()
+			p.Start("Committing", 0).Finish()
+			p.Start("Pulling the task database", 240).Advance(112, 240)
+			p.Start("Pushing the task database", 0)
+			tuingo.Center(p, p.Size).Draw(s)
 		}},
 		{"tabs", 60, 1, func(s tcell.Screen) {
 			t := tuingo.NewTabs()
